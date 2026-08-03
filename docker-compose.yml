@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
+services:
+  postgres:
+    image: postgres:16
+    container_name: crablearn-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: crablearn
+      POSTGRES_USER: crablearn
+      POSTGRES_PASSWORD: crablearn123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+volumes:
+  postgres_data:

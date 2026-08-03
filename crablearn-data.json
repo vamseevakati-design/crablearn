@@ -1,0 +1,49 @@
+{
+  "students": [
+    {
+      "id": 1,
+      "full_name": "Tanisha",
+      "phone": "8004994769",
+      "password": "demo-password",
+      "status": "approved",
+      "role": "student",
+      "created_at": "2026-07-25T16:37:34.488Z"
+    },
+    {
+      "id": 2,
+      "full_name": "Admin User",
+      "phone": "9000000000",
+      "password": "admin@123",
+      "status": "approved",
+      "role": "admin",
+      "created_at": "2026-07-25T17:00:00.000Z"
+    }
+  ],
+  "callback_requests": [
+    {
+      "id": 2,
+      "parent_name": "Priya Sharma",
+      "parent_phone": "9988776655",
+      "program": "Summer Program 2026",
+      "message": "My daughter needs help with English and math for grade 10.",
+      "created_at": "2026-07-25T16:44:40.456Z"
+    },
+    {
+      "id": 3,
+      "parent_name": "Priya Sharma",
+      "parent_phone": "9988776655",
+      "program": "Summer Program 2026",
+      "message": "My daughter needs help with English and math for grade 10.",
+      "created_at": "2026-07-25T16:45:33.803Z"
+    },
+    {
+      "id": 4,
+      "parent_name": "Priya Sharma",
+      "parent_phone": "8004994769",
+      "program": "Elementary",
+      "message": "Need support for grade 7 math and science.",
+      "created_at": "2026-07-25T17:16:32.364Z"
+    }
+  ],
+  "nextId": 5
+}

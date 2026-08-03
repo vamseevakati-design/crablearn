@@ -1,0 +1,6 @@
+{
+  "pid": 8100,
+  "started_at": 1785055624.3690095,
+  "log": "D:\\projects\\artifacts\\runtime\\logs\\api.log",
+  "url": "http://127.0.0.1:4000/api/health"
+}
