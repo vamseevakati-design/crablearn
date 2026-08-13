@@ -244,16 +244,16 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.post("/api/auth/login", (req, res) => {
-  const { phone, password, role } = req.body ?? {};
-  const identifier = String(phone || "").trim();
+  const { phone, identifier, password, role } = req.body ?? {};
+  const loginId = String(phone || identifier || "").trim();
 
-  if (!identifier || !password) {
+  if (!loginId || !password) {
     return res.status(400).json({ ok: false, message: "Username/phone and password are required." });
   }
 
   try {
-    console.log("Login attempt with identifier:", identifier);
-    const student = authenticateStudent(identifier, String(password));
+    console.log("Login attempt with identifier:", loginId);
+    const student = authenticateStudent(loginId, String(password));
 
     if (!student) {
       return res.status(401).json({ ok: false, message: "Invalid login credentials." });
