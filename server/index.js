@@ -798,4 +798,29 @@ function start() {
   })();
 }
 
-start();
+let readyPromise = null;
+export async function ensureReady() {
+  if (!readyPromise) {
+    readyPromise = (async () => {
+      await ensureSchema();
+      try {
+        await ensureAccountsSchema();
+      } catch (accountsError) {
+        console.warn("Accounts schema initialization skipped:", accountsError.message);
+      }
+      try {
+        await ensureRatesSchema();
+      } catch (ratesError) {
+        console.warn("Rates schema initialization skipped:", ratesError.message);
+      }
+    })();
+  }
+  return readyPromise;
+}
+
+export default app;
+
+// Local / Docker: listen on a port. Vercel: export the app only.
+if (!process.env.VERCEL) {
+  start();
+}
