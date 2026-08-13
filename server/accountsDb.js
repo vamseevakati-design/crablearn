@@ -31,12 +31,34 @@ function getPool() {
     return pool;
   }
 
+  const connectionString = String(process.env.DATABASE_URL || process.env.POSTGRES_URL || "").trim();
+  if (connectionString) {
+    const needsSsl =
+      process.env.PGSSLMODE === "require" ||
+      /sslmode=require/i.test(connectionString) ||
+      /\.neon\.tech|\.supabase\.co|\.render\.com|\.vercel-storage\.com/i.test(connectionString);
+    pool = new Pool({
+      connectionString,
+      ssl: needsSsl ? { rejectUnauthorized: false } : undefined
+    });
+    return pool;
+  }
+
+  const host = process.env.PGHOST || "127.0.0.1";
+  const isLocal = host === "127.0.0.1" || host === "localhost";
+  if (process.env.VERCEL && isLocal) {
+    throw new Error(
+      "Postgres is not configured on Vercel. Set DATABASE_URL (or PGHOST/PGUSER/PGPASSWORD/PGDATABASE) in Project → Settings → Environment Variables."
+    );
+  }
+
   pool = new Pool({
-    host: process.env.PGHOST || "127.0.0.1",
+    host,
     port: Number(process.env.PGPORT || 5432),
     user: process.env.PGUSER || "crablearn",
     password: process.env.PGPASSWORD || "crablearn123",
-    database: process.env.PGDATABASE || "crablearn"
+    database: process.env.PGDATABASE || "crablearn",
+    ssl: process.env.PGSSLMODE === "require" ? { rejectUnauthorized: false } : undefined
   });
 
   return pool;
