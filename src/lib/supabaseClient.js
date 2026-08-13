@@ -1,19 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "./utils/supabase/client";
 
-const supabaseUrl =
-  import.meta.env.VITE_SUPABASE_URL ||
-  import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
-  "";
-
-const supabaseKey =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  "";
-
-if (!supabaseUrl || !supabaseKey) {
-  console.warn(
-    "Supabase env missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY (see .env.example)."
-  );
-}
-
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient();
