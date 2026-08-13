@@ -10,7 +10,7 @@ let data = {
     {
       id: 1,
       full_name: "Tanisha",
-      phone: "8004994769",
+      phone: "9871587344",
       password: "demo-password",
       status: "approved",
       role: "student",
@@ -18,17 +18,112 @@ let data = {
     },
     {
       id: 2,
+      full_name: "Padmaja Vakati",
+      phone: "9787001217",
+      password: "Get2work",
+      status: "approved",
+      role: "teacher",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: 3,
       full_name: "Admin User",
-      phone: "9000000000",
+      phone: "+919787001217",
+      email: "padmaja.vamsee@gmail.com",
       password: "admin@123",
       status: "approved",
       role: "admin",
       created_at: new Date().toISOString()
+    },
+    {
+      id: 4,
+      full_name: "supervisor",
+      phone: "+919873762244",
+      email: "vrvamsee@gmail.com",
+      password: "Paddu@0629",
+      status: "approved",
+      role: "supervisor",
+      created_at: new Date().toISOString()
     }
   ],
   callback_requests: [],
-  nextId: 3
+  approval_notifications: [],
+  nextId: 4
 };
+
+function normalizeDataShape() {
+  if (!Array.isArray(data.students)) {
+    data.students = [];
+  }
+
+  if (!Array.isArray(data.callback_requests)) {
+    data.callback_requests = [];
+  }
+
+  if (!Array.isArray(data.approval_notifications)) {
+    data.approval_notifications = [];
+  }
+
+  if (!Number.isFinite(Number(data.nextId))) {
+    data.nextId = data.students.length + data.callback_requests.length + data.approval_notifications.length + 1;
+  }
+
+  data.students = data.students.map((student) => ({
+    ...student,
+    email: student.email || null
+  }));
+}
+
+function syncPrivilegedAccount({ role, fullName, phone, email, password }) {
+  const normalizedRole = String(role || "").trim().toLowerCase();
+  if (!normalizedRole) {
+    return null;
+  }
+
+  const existingByRole = data.students.find((student) => String(student.role || "").trim().toLowerCase() === normalizedRole);
+  const existingByPhone = data.students.find((student) => String(student.phone || "").trim() === String(phone || "").trim());
+  const target = existingByRole || existingByPhone;
+
+  if (target) {
+    const nextEmail = email ? String(email).trim() : null;
+    const hasChanges =
+      target.full_name !== fullName ||
+      target.phone !== phone ||
+      (target.email || null) !== nextEmail ||
+      target.password !== password ||
+      target.status !== "approved" ||
+      target.role !== normalizedRole;
+
+    if (hasChanges) {
+      target.full_name = fullName;
+      target.phone = phone;
+      target.email = nextEmail;
+      target.password = password;
+      target.status = "approved";
+      target.role = normalizedRole;
+      target.updated_at = new Date().toISOString();
+      saveData();
+    }
+
+    return target;
+  }
+
+  const student = {
+    id: data.nextId++,
+    full_name: String(fullName || "").trim(),
+    phone: String(phone || "").trim(),
+    email: email ? String(email).trim() : null,
+    password: String(password || ""),
+    status: "approved",
+    role: normalizedRole,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  data.students.push(student);
+  saveData();
+  return student;
+}
 
 // Load existing data on startup
 function loadData() {
@@ -36,10 +131,12 @@ function loadData() {
     try {
       const fileContent = fs.readFileSync(dbPath, "utf-8");
       data = JSON.parse(fileContent);
+      normalizeDataShape();
     } catch (error) {
       console.error("Failed to load data:", error.message);
     }
   } else {
+    normalizeDataShape();
     saveData();
   }
 }
@@ -145,6 +242,153 @@ export function query(sql, params = []) {
 export async function getDb() {
   loadData();
   return true;
+}
+
+export function authenticateStudent(identifier, password) {
+  const normalizedIdentifier = String(identifier || "").trim().toLowerCase();
+  const normalizedPassword = String(password || "");
+
+  if (!normalizedIdentifier || !normalizedPassword) {
+    return null;
+  }
+
+  return (
+    data.students.find((student) => {
+      const phoneMatch = String(student.phone || "") === normalizedIdentifier;
+      const nameMatch = String(student.full_name || "").trim().toLowerCase() === normalizedIdentifier;
+      const emailMatch = String(student.email || "").trim().toLowerCase() === normalizedIdentifier;
+      return (phoneMatch || nameMatch || emailMatch) && String(student.password) === normalizedPassword;
+    }) || null
+  );
+}
+
+export function listStudents() {
+  return data.students;
+}
+
+export function createStudent({ fullName, phone, password, status = "approved", role = "student" }) {
+  const normalizedPhone = String(phone || "").trim();
+  const normalizedName = String(fullName || "").trim();
+  const normalizedPassword = String(password || "");
+  const normalizedRole = String(role || "student").trim().toLowerCase();
+
+  if (!normalizedName || !normalizedPhone || !normalizedPassword) {
+    throw new Error("MISSING_REQUIRED_FIELDS");
+  }
+
+  const existing = data.students.find((student) => student.phone === normalizedPhone);
+  if (existing) {
+    throw new Error("UNIQUE constraint failed: students.phone");
+  }
+
+  const student = {
+    id: data.nextId++,
+    full_name: normalizedName,
+    phone: normalizedPhone,
+    email: null,
+    password: normalizedPassword,
+    status: String(status || "approved").trim().toLowerCase(),
+    role: normalizedRole || "student",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  data.students.push(student);
+  saveData();
+  return student;
+}
+
+export function unlockStudent(phone) {
+  const normalizedPhone = String(phone || "").trim();
+  const student = data.students.find((item) => item.phone === normalizedPhone);
+  if (!student) {
+    return null;
+  }
+
+  student.status = "approved";
+  student.updated_at = new Date().toISOString();
+  saveData();
+  return student;
+}
+
+export function updateStudentStatus(phone, status, reviewedBy = null) {
+  const normalizedPhone = String(phone || "").trim();
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+  const student = data.students.find((item) => item.phone === normalizedPhone);
+  if (!student) {
+    return null;
+  }
+
+  student.status = normalizedStatus || student.status;
+  student.updated_at = new Date().toISOString();
+  student.reviewed_at = new Date().toISOString();
+  student.reviewed_by = reviewedBy ? String(reviewedBy).trim() : null;
+  saveData();
+  return student;
+}
+
+export function createApprovalNotification({ student, targets, reviewer = null }) {
+  const notification = {
+    id: data.nextId++,
+    student_phone: student?.phone || null,
+    student_name: student?.full_name || null,
+    role: student?.role || null,
+    status: student?.status || null,
+    reviewer: reviewer ? String(reviewer).trim() : null,
+    targets: targets
+      ? JSON.parse(JSON.stringify(targets))
+      : {
+          admin: { phone: null, email: null },
+          supervisor: { phone: null, email: null }
+        },
+    created_at: new Date().toISOString()
+  };
+
+  data.approval_notifications.push(notification);
+  saveData();
+  return notification;
+}
+
+export function listApprovalNotifications() {
+  return data.approval_notifications;
+}
+
+export function ensurePrivilegedAccounts() {
+  const admin = syncPrivilegedAccount({
+    role: "admin",
+    fullName: "Admin User",
+    phone: "+919787001217",
+    email: "padmaja.vamsee@gmail.com",
+    password: "admin@123"
+  });
+
+  const supervisor = syncPrivilegedAccount({
+    role: "supervisor",
+    fullName: "supervisor",
+    phone: "+919873762244",
+    email: "vrvamsee@gmail.com",
+    password: "Paddu@0629"
+  });
+
+  return { admin, supervisor };
+}
+
+export function resetStudentPassword(phone, newPassword) {
+  const normalizedPhone = String(phone || "").trim();
+  const normalizedPassword = String(newPassword || "");
+  const student = data.students.find((item) => item.phone === normalizedPhone);
+  if (!student) {
+    return null;
+  }
+
+  if (!normalizedPassword) {
+    throw new Error("PASSWORD_REQUIRED");
+  }
+
+  student.password = normalizedPassword;
+  student.updated_at = new Date().toISOString();
+  saveData();
+  return student;
 }
 
 export function closeDb() {

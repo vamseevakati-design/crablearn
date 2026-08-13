@@ -1,1 +1,12 @@
 .vercel
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+artifacts/
+*.db
+crablearn-data.json
+npm-debug.log*
+.DS_Store
+*.log
