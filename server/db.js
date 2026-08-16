@@ -48,7 +48,16 @@ let data = {
   ],
   callback_requests: [],
   approval_notifications: [],
-  nextId: 4
+  assignments: [
+    {
+      id: 5,
+      student_id: 1,
+      teacher_id: 2,
+      mapped_by: "supervisor",
+      created_at: new Date().toISOString()
+    }
+  ],
+  nextId: 6
 };
 
 function normalizeDataShape() {
@@ -64,8 +73,12 @@ function normalizeDataShape() {
     data.approval_notifications = [];
   }
 
+  if (!Array.isArray(data.assignments)) {
+    data.assignments = [];
+  }
+
   if (!Number.isFinite(Number(data.nextId))) {
-    data.nextId = data.students.length + data.callback_requests.length + data.approval_notifications.length + 1;
+    data.nextId = data.students.length + data.callback_requests.length + data.approval_notifications.length + data.assignments.length + 1;
   }
 
   data.students = data.students.map((student) => ({
@@ -264,6 +277,101 @@ export function authenticateStudent(identifier, password) {
 
 export function listStudents() {
   return data.students;
+}
+
+export function toPublicUser(user) {
+  if (!user) {
+    return null;
+  }
+  return {
+    id: user.id,
+    full_name: user.full_name,
+    phone: user.phone,
+    email: user.email || null,
+    status: user.status,
+    role: user.role,
+    created_at: user.created_at
+  };
+}
+
+function findUserById(id) {
+  const numericId = Number(id);
+  return data.students.find((item) => Number(item.id) === numericId) || null;
+}
+
+function hydrateAssignment(row) {
+  const student = findUserById(row.student_id);
+  const teacher = findUserById(row.teacher_id);
+  if (!student || !teacher) {
+    return null;
+  }
+  return {
+    id: row.id,
+    student_id: student.id,
+    teacher_id: teacher.id,
+    student: toPublicUser(student),
+    teacher: toPublicUser(teacher),
+    mapped_by: row.mapped_by || null,
+    created_at: row.created_at
+  };
+}
+
+export function listAssignments() {
+  return data.assignments.map(hydrateAssignment).filter(Boolean);
+}
+
+export function getAssignmentsForUser(user) {
+  const role = String(user?.role || "").trim().toLowerCase();
+  const userId = Number(user?.id);
+  const all = listAssignments();
+  if (role === "admin" || role === "supervisor") {
+    return all;
+  }
+  if (role === "teacher") {
+    return all.filter((item) => Number(item.teacher_id) === userId);
+  }
+  if (role === "student") {
+    return all.filter((item) => Number(item.student_id) === userId);
+  }
+  return [];
+}
+
+export function createAssignment({ studentId, teacherId, mappedBy = null }) {
+  const student = findUserById(studentId);
+  const teacher = findUserById(teacherId);
+  if (!student || String(student.role || "").toLowerCase() !== "student") {
+    throw new Error("STUDENT_NOT_FOUND");
+  }
+  if (!teacher || String(teacher.role || "").toLowerCase() !== "teacher") {
+    throw new Error("TEACHER_NOT_FOUND");
+  }
+  const exists = data.assignments.find(
+    (item) => Number(item.student_id) === Number(student.id) && Number(item.teacher_id) === Number(teacher.id)
+  );
+  if (exists) {
+    throw new Error("ASSIGNMENT_EXISTS");
+  }
+  const assignment = {
+    id: data.nextId++,
+    student_id: student.id,
+    teacher_id: teacher.id,
+    mapped_by: mappedBy ? String(mappedBy).trim() : null,
+    created_at: new Date().toISOString()
+  };
+  data.assignments.push(assignment);
+  saveData();
+  return hydrateAssignment(assignment);
+}
+
+export function deleteAssignment(id) {
+  const numericId = Number(id);
+  const index = data.assignments.findIndex((item) => Number(item.id) === numericId);
+  if (index < 0) {
+    return null;
+  }
+  const [removed] = data.assignments.splice(index, 1);
+  saveData();
+  return hydrateAssignment(removed) || removed;
 }
 
 export function createStudent({ fullName, phone, password, status = "approved", role = "student" }) {

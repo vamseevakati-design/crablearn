@@ -3,83 +3,124 @@ import AccountsPage from "./AccountsPage";
 
 const subjectGroups = [
   {
-    name: "Elementary",
-    subjects: ["Elementary Math", "Science", "Grammar and Writing", "Reading Comprehension"]
+    name: "School Boards",
+    subjects: ["CBSE Class 10th", "CBSE Class 12th", "State Board", "LKG to 5th"]
   },
   {
-    name: "High School / Middle School",
-    subjects: ["Algebra", "Biology", "Physics", "Essay Writing"]
+    name: "Competitive Exams",
+    subjects: ["IIT JEE", "IIT JEE Notes", "NEET", "NEET Notes", "Olympiad", "Test Series"]
   },
   {
-    name: "Languages",
-    subjects: ["English Fluency", "French", "Spanish", "IELTS Speaking"]
+    name: "School Preparation",
+    subjects: ["Class 6th", "Class 7th", "Class 8th", "Class 9th", "Class 11th"]
   },
   {
-    name: "AP",
-    subjects: ["AP Calculus", "AP Chemistry", "AP Statistics"]
+    name: "Government Exams",
+    subjects: ["UPSC", "Railway Exams", "SSC Exams", "Banking (IBPS/PO)", "Other Govt Exams"]
   },
   {
-    name: "IB",
-    subjects: ["IB Math AA", "IB Biology", "TOK Writing"]
+    name: "Special Programs",
+    subjects: ["Live One to One", "Home Tuition", "Practice Quiz"]
   },
   {
-    name: "IGCSE",
-    subjects: ["Extended Math", "Coordinated Science", "English First Language"]
-  },
-  {
-    name: "SAT",
-    subjects: ["Math Prep", "Reading Strategy", "Essay Review"]
-  },
-  {
-    name: "ACT",
-    subjects: ["Math", "Science Reasoning", "English"]
-  }
-];
-
-const liveClasses = [
-  {
-    title: "Maths Class - Zoom",
-    type: "General",
-    platform: "Zoom",
-    updated: "Updated: 2026-07-22 17:00:00"
-  },
-  {
-    title: "Maths Class - Webex",
-    type: "Exclusive",
-    platform: "Webex",
-    updated: "Updated: 2026-07-22 16:42:00"
-  },
-  {
-    title: "Science Class (R-3)",
-    type: "General",
-    platform: "Zoom",
-    updated: "Updated: 2026-07-22 15:55:00"
+    name: "Academics",
+    subjects: ["Computer Science", "CS Study Notes"]
   }
 ];
 
 const featureList = [
-  "1-on-1 tutoring",
-  "Managed tutoring",
-  "Flexible scheduling",
-  "Homework help"
+  "Personalized one-on-one academic tutoring",
+  "Home tuition or live online classes",
+  "Expert and verified educators",
+  "CBSE, ICSE, and State Boards"
 ];
 
 const workItems = [
-  "Professional responsive website design",
-  "Mobile-friendly layout",
-  "Secure student dashboard",
-  "Student registration and approval workflow",
-  "Protected live class access",
-  "Fee management and reporting"
+  "Personalized learning with real-time feedback",
+  "Fewer distractions than a crowded classroom",
+  "Faster academic growth and confidence",
+  "Flexible scheduling and 1-to-1 doubt clearing",
+  "Learning plan crafted for each student",
+  "Qualified educators at home in one click"
 ];
 
 const proofStats = [
-  { value: "2.5k+", label: "active students" },
-  { value: "180+", label: "weekly live classes" },
-  { value: "96%", label: "renewal rate" }
+  { value: "1-on-1", label: "live learning" },
+  { value: "LKG–12", label: "home tuition" },
+  { value: "JEE / NEET", label: "exam tracks" }
 ];
 
-const trustBadges = ["Live mentor support", "Secure parent portal", "Weekly progress snapshots", "Fast callback response"];
+const trustBadges = [
+  "Verified educators",
+  "Home tuition or live online",
+  "Money-back after first tutorial",
+  "CBSE, ICSE, State Boards"
+];
+
+const focusCards = [
+  { icon: "🎯", title: "Personalised Focus", text: "Every class is tailored to your learning speed & needs.", cta: "1-on-1 Classes →" },
+  { icon: "🧠", title: "Concept Clarity", text: "Understand topics deeply with 1-on-1 expert guidance.", cta: "Clear My Doubts →" },
+  { icon: "⚡", title: "Fast Progress", text: "Track improvement and get instant feedback.", cta: "Prep for Exams →" },
+  { icon: "📚", title: "Exam Ready", text: "Stay ahead with board-specific and competitive prep.", cta: "Boost My Skills →" }
+];
+
+const programCards = [
+  { title: "Classes LKG - 3", text: "Specially crafted early learning program for young minds", cta: "Book a Free Demo", href: "#contact" },
+  { title: "Classes 4 - 12", text: "Book educator for any Board class", cta: "Explore More", href: "#contact" },
+  { title: "IIT-JEE", text: "You can select and book your personal educator for JEE Exam", cta: "Explore JEE", href: "#contact" },
+  { title: "NEET", text: "You can select and book your personal educator for NEET Exam", cta: "Explore NEET", href: "#contact" },
+  { title: "Govt Job Exams", text: "You can select and book your personal educator for SSC, RRB, Banking, and other Govt Job Exams", cta: "Explore More Exams", href: "#contact" },
+  { title: "UPSC", text: "Book your personal educator to succeed in your dream IAS and other UPSC exams", cta: "Explore UPSC", href: "#contact" },
+  { title: "Defence Exams", text: "Book your personal educator for NDA, CDS, and other Defence Exams.", cta: "Explore More Exams", href: "#contact" },
+  { title: "Sainik School", text: "Book your personal educator for Sainik School Entrance Exams.", cta: "Book Now", href: "#contact" }
+];
+
+const excellenceCards = [
+  { title: "Our Educational Excellence in Personalized Learning", text: "Discover our commitment to top-notch solutions for learners and educators." },
+  { title: "Building Bridges Through Personalized Learning", text: "Empowering students from all backgrounds with one-on-one guidance, Crab Learn connects knowledge, confidence, and academic growth, right from the comfort of your home." },
+  { title: "Innovating Home Tuition for Tomorrow", text: "From Class 1 to 12, our expert tutors use modern teaching tools, custom learning plans, and real-time feedback to make learning personal, effective, and future-ready." },
+  { title: "Navigating the Future of Education", text: "We are leading the way in shaping personalized education." }
+];
+
+const easySteps = [
+  { title: "Find your perfect Educator match", text: "Search profiles of educators across all subjects. Everything from grades, prices, reviews, and more—checked and verified for your peace of mind." },
+  { title: "Meet your perfect educator", text: "Shortlist your perfect match, then connect via the Crab Learn site. Booking is simple, secure, and convenient—online or in person!" },
+  { title: "Know you’re safeguarded", text: "You’re backed by Crab Learn’s money-back guarantee and platform protections. We focus on your safety, so you can focus on learning!" }
+];
+
+const advantages = [
+  { title: "Conceptual clarity through visualisation", text: "Visual explanations and 1-on-1 doubt clearing until the topic sticks." },
+  { title: "Verified and High-Quality Teachers", text: "Screened educators for school boards and competitive tracks." },
+  { title: "Wide Range of Subjects and Levels", text: "LKG to Class 12, JEE, NEET, Olympiad, and selected government exams." }
+];
+
+const benefits = [
+  { title: "Easy to Use", text: "Easy-to-use platform with a simple and intuitive interface." },
+  { title: "Intuitive to Operate", text: "Simple and intuitive interface for parents, students, and teachers." },
+  { title: "Flexible to Administer", text: "Flexible admin tools for approvals, live links, and fee tracking." },
+  { title: "Friendly to Manage", text: "User-friendly management system with weekly reports." },
+  { title: "Powerful to Scale", text: "Scalable platform for growth — from one child to a full class roster." },
+  { title: "Affordable to Own", text: "Affordable pricing for 1-on-1 plans without unused batch fees." }
+];
+
+const howSteps = [
+  { n: "01", title: "Expert Tutor Selection", text: "We match you with 2–3 vetted tutors for trial sessions." },
+  { n: "02", title: "Personalized Teaching Plan", text: "Includes structured modules, performance tracking dashboards, and smart suggestions." },
+  { n: "03", title: "Continuous Improvement", text: "Weekly progress reports, parent–tutor feedback reviews, and live chat support." },
+  { n: "04", title: "Celebrate Milestones", text: "Report cards, confidence check-ins, and customized awards help maintain high motivation." }
+];
+
+const faqs = [
+  { q: "How does Crab Learn connect educators and learners for tutoring?", a: "Share the class, board, and home-or-online preference. We shortlist verified educators for a trial, then you book the match that fits." },
+  { q: "Can students choose their preferred educators for home tuition?", a: "Yes. After a trial you can continue with that educator or ask us to suggest another." },
+  { q: "What types of tuition classes are available on Crab Learn?", a: "Home tuition, live 1-on-1 online classes, board exam prep, JEE, NEET, Olympiad, and selected government-exam tracks." },
+  { q: "How can educators join Crab Learn and offer tutoring services?", a: "Use teacher login after approval, or send a callback request as Become educator and our team will follow up." },
+  { q: "What should I do if I encounter technical issues or need help finding home tutors?", a: "Use Book an educator on this page or Sign in if you already have an account. We call back with options." },
+  { q: "Is Crab Learn safe for children?", a: "Yes. Live class links open only after approved login. Unapproved accounts cannot join sessions." },
+  { q: "What boards do you support?", a: "CBSE, ICSE, and state boards from LKG to Class 12, plus foundation and competitive streams." },
+  { q: "Can I choose between online and home tuition?", a: "Yes. Pick home tuition or live online 1-on-1 when you request a callback." },
+  { q: "How do I track my child’s performance?", a: "The student portal shows class links, fee status, and weekly progress. Parents can share the same account visibility." }
+];
 
 const adminFeatures = [
   "Manage students and approvals",
@@ -87,6 +128,7 @@ const adminFeatures = [
   "Fee management",
   "View reports and analytics",
   "Manage callback requests",
+  "Map students with educators",
   "System settings"
 ];
 
@@ -96,13 +138,229 @@ const adminQuickStats = [
 ];
 
 const taglines = [
-  "Where confidence meets expertise",
-  "Unlock your child's full potential",
-  "Live learning that actually works",
-  "Your child's success starts here"
+  "Your Personalized Home Tuition Hub",
+  "The Best Platform For Students",
+  "Book an Educator for home tuition",
+  "One-on-One Live Learning"
 ];
 
 const defaultCategory = subjectGroups[0].name;
+
+const syllabusLinks = [
+  "CBSE Syllabus (1st to 12th)",
+  "CBSE (LKG to 5th)",
+  "Class 6th to 9th and 11th",
+  "CBSE Board Exams (10th & 12th)",
+  "Prepare for your exam with us"
+];
+
+const moreLinks = [
+  { label: "Featured courses", href: "#featured" },
+  { label: "How it works", href: "#workflow" },
+  { label: "Benefits", href: "#benefits" },
+  { label: "Practice Quiz", href: "#practice-quiz" },
+  { label: "Explore Home Tuition", href: "#about" },
+  { label: "Live one to one Classes", href: "#courses" },
+  { label: "Become Educator", href: "#become-educator" },
+  { label: "Book Educator", href: "#book-educator" }
+];
+
+const educatorSteps = [
+  { n: "1", icon: "+", title: "Step 1: Register", text: "The first step to joining is signing up with your Google account or manually filling out the registration form." },
+  { n: "2", icon: "☰", title: "Step 2: Complete Your Profile", text: "Fill in your personal details, teaching qualifications, and previous experience." },
+  { n: "3", icon: "▶", title: "Step 3: Submit a Demo Video", text: "Upload a short video showcasing your teaching skills and subject expertise." },
+  { n: "4", icon: "✓", title: "Step 4: Verification", text: "Our team will review your profile, experience, and demo video for approval." },
+  { n: "5", icon: "▣", title: "Step 5: Access Your Dashboard", text: "Once approved, you will get access to your dashboard to start your teaching journey with us as an educator on Crab Learn." },
+  { n: "6", icon: "★", title: "Step 6: Start Earning", text: "Once approved, start teaching and earning on Crab Learn." }
+];
+
+const educatorWhyCards = [
+  { icon: "◷", title: "Flexible Opportunities", text: "Work on your own schedule. Teach full-time or part-time while making a meaningful impact." },
+  { icon: "↑", title: "Seamless Content Upload", text: "Use our user-friendly dashboard to upload quality educational content for students worldwide." },
+  { icon: "👍", title: "Earnings Based on Quality", text: "High-quality content approval processes will reward your passion and recognition." },
+  { icon: "💡", title: "Innovative Teaching Tools", text: "Access advanced features to enhance your teaching methods and engage students more effectively." },
+  { icon: "👥", title: "Collaborative Community", text: "Join a vibrant community of educators, sharing ideas, best practices, and tools for success." },
+  { icon: "✦", title: "Recognition & Growth", text: "Achieve recognition for your efforts and grow your reputation as an expert educator." }
+];
+
+const educatorJobBenefits = [
+  "Verified Leads for Home Tutor Jobs",
+  "Flexible Part-Time / Full-Time Tutor Jobs",
+  "Find Jobs Based on Your Location",
+  "Recruitment Assistance",
+  "No Registration / Hidden Charges",
+  "Get Competitive Pay"
+];
+
+const educatorAuthPoints = [
+  "Sign up with your email or Google account.",
+  "Complete your profile with necessary details.",
+  "Verify your email and start tutoring!"
+];
+
+const studentJoinPoints = [
+  "Sign up with your email and login anytime as student.",
+  "Prepare your learning profile with preferred list of topics.",
+  "Select and connect with your chosen world class expert.",
+  "Unlock your full potential with world-class one-to-one learning session."
+];
+
+const studentTutorCards = [
+  { icon: "◎", title: "Smart one-one learning", text: "Custom content, focused sessions, and flexible scheduling with your educator." },
+  { icon: "⚖", title: "Affordability", text: "Affordable 1-on-1 tutoring sessions without unused batch fees." },
+  { icon: "▣", title: "Management system", text: "Track sessions, progress, and class links from one student dashboard." },
+  { icon: "🎓", title: "Experienced Tutors", text: "Verified educators for Maths, Science, Coding, boards, and competitive prep." }
+];
+
+const studentAdvantages = [
+  { icon: "⚖", title: "Affordability" },
+  { icon: "🎓", title: "Experienced Tutors" },
+  { icon: "▣", title: "Management system" },
+  { icon: "✎", title: "Personalized Learning" },
+  { icon: "◷", title: "Flexibility of Time" },
+  { icon: "⌂", title: "Convenience and Comfort" },
+  { icon: "◉", title: "Identity, Privacy & Systems" },
+  { icon: "⇄", title: "Two way communication" },
+  { icon: "♥", title: "Student-Centric Focus" }
+];
+
+const heroPages = [
+  {
+    theme: "quiz",
+    title: "Ready to Test Your Brain?",
+    kicker: "Master Every CBSE Subject with Fun Quizzes!",
+    linkLabel: "Start Your Quiz Now",
+    ctaLabel: "Start Quiz",
+    chips: ["CBSE", "Quiz", "Fun", "Boards"]
+  },
+  {
+    theme: "educator",
+    title: "Become an Educator",
+    kicker: "Share knowledge with students at home or live 1-on-1.",
+    linkLabel: "Join Crab Learn",
+    ctaLabel: "Become Educator",
+    chips: ["Teach", "Home", "Online", "Earn"]
+  },
+  {
+    theme: "book",
+    title: "Educators on Call",
+    kicker: "Are you looking for an educator? Find educators on demand.",
+    linkLabel: "Book Your Educator Now",
+    ctaLabel: "Book Educator",
+    chips: ["1:1", "CBSE", "ICSE", "Boards"]
+  }
+];
+
+const featuredCourseCards = [
+  { title: "Learn Anywhere", text: "Study on the go with our mobile-friendly platform." },
+  { title: "Master Your Concepts", text: "Interactive lessons that boost clarity and retention." },
+  { title: "Track Your Progress", text: "Weekly reports and parent-visible improvement." }
+];
+
+const quizPoints = [
+  "Offers a wide range of courses, quizzes, and interactive content for learners of all levels",
+  "Focuses on enhancing academic knowledge, professional skills, and personal growth.",
+  "Connects you with like-minded individuals and experts, fostering collaboration and knowledge sharing."
+];
+
+const trendCards = [
+  { title: "Cutting-Edge Personalization", text: "Adaptive systems adjust pace according to each student’s grasp—part of global AI/ML tutoring trends." },
+  { title: "Time & Cost-Efficient", text: "No travel time, flexible slots, and bite-size modules make learning efficient and cost-effective." },
+  { title: "Trends-Driven Approach", text: "Leading the wave in micro-learning, AI-integrated tutoring, and gamified lessons." },
+  { title: "One-on-One, Real Results", text: "Comfortable, distraction-free home environment improves learning focus. Custom attention, academic confidence, and faster concept mastery." }
+];
+
+const featuredIn = ["Skill India", "NAPS", "iStart", "Patrika", "Times of India"];
+
+const class12Subjects = ["Mathematics", "Physics", "Chemistry", "Biology", "English", "Hindi", "Business Studies", "Accountancy", "Political Science", "Economics"];
+const class11Subjects = ["Mathematics", "Physics", "Chemistry", "Biology", "English", "Hindi", "Business Studies", "Accountancy", "Political Science", "Economics"];
+const class10Subjects = ["Mathematics", "Science", "Social Science", "English", "Hindi"];
+const cbseClasses = ["CBSE Class - 1", "CBSE Class - 2", "CBSE Class - 3", "CBSE Class - 4", "CBSE Class - 5", "CBSE Class - 6", "CBSE Class - 7", "CBSE Class - 8", "CBSE Class - 9", "CBSE Class - 10", "CBSE Class - 11", "CBSE Class - 12"];
+const coursePacks = [
+  "Class 12 PCM",
+  "Class 12 PCB",
+  "Class 12 Commerce",
+  "Class 11 PCM",
+  "Class 11 PCB Foundation Course",
+  "Class 11 Complete Course",
+  "Class 10 Complete Course",
+  "Class 9 Complete Course",
+  "Class 8 Complete Course",
+  "Class 7 Complete Course",
+  "Class 6 Complete Course"
+];
+const stateBoards = [
+  "Andhra Pradesh Board (BSEAP)",
+  "Arunachal Pradesh Board (DSEAP)",
+  "Assam Board (SEBA)",
+  "Bihar Board (BSEB)",
+  "Chhattisgarh Board (CGBSE)",
+  "Goa Board (GBSHSE)",
+  "Gujarat Board (GSEB)",
+  "Haryana Board (BSEH)",
+  "Himachal Pradesh (HPBOSE)",
+  "Jharkhand Board (JAC)",
+  "Karnataka Board (KSEAB)",
+  "Kerala Board (KBPE)",
+  "Madhya Pradesh Board (MPBSE)",
+  "Maharashtra State Board (MSBSHSE)",
+  "Manipur Board (BSEM)",
+  "Meghalaya Board (MBOSE)",
+  "Mizoram Board (MBSE)",
+  "Nagaland Board (NBSE)",
+  "Punjab Board (PSEB)",
+  "Rajasthan Board (RBSE)",
+  "Tamil Nadu Board (TNBS)",
+  "Telangana Board (BSE Telangana)",
+  "Tripura Board (TBSE)",
+  "Uttar Pradesh Board (UPMSP)",
+  "Uttarakhand Board (UBSE)",
+  "West Bengal Board (WBBSE)",
+  "Odisha Board (BSE Odisha)"
+];
+const cbseSamplePapers = [
+  "CBSE Sample Papers For Class-8",
+  "CBSE Sample Papers For Class-9",
+  "CBSE Sample Papers For Class-10",
+  "CBSE Sample Papers For Class-11",
+  "CBSE Sample Papers For Class-12"
+];
+const icseSamplePapers = [
+  "ICSE Sample Papers For Class-8",
+  "ICSE Sample Papers For Class-9",
+  "ICSE Sample Papers For Class-10",
+  "ICSE Sample Papers For Class-11",
+  "ICSE Sample Papers For Class-12"
+];
+const studyMaterial = [
+  "Roman Numerals",
+  "CBSE",
+  "Math Formulas",
+  "CBSE Sample Papers",
+  "CBSE Sample Question Papers",
+  "CBSE Previous Year Questions",
+  "CBSE Previous Year Question Papers",
+  "ICSE Sample Papers",
+  "ICSE Previous Year Questions",
+  "ICSE Previous Year Question Papers"
+];
+const mathsFormulas = [
+  "Maths Formula For Class 6",
+  "Maths Formula For Class 7",
+  "Maths Formula For Class 8",
+  "Maths Formula For Class 9",
+  "Maths Formula For Class 10",
+  "Maths Formula For Class 11",
+  "Maths Formula For Class 12"
+];
+const previousYearPapers = [
+  "ICSE Previous Year Question Papers",
+  "ICSE Previous Year Question Papers For Class-10",
+  "ISC Previous Year Question Papers For Class-12",
+  "CBSE Previous Year Question Papers",
+  "CBSE Previous Year Question Papers For Class-10",
+  "CBSE Previous Year Question Papers For Class-12"
+];
 
 const signInProfiles = {
   student: {
@@ -158,7 +416,54 @@ const signInRoutes = {
   accounts: "/Accounts"
 };
 
+function isEducatorJoinPath(pathname) {
+  const normalizedPath = decodeURIComponent(String(pathname || "")).trim().toLowerCase().replace(/\/+$/, "");
+  return normalizedPath.endsWith("become educator") || normalizedPath.endsWith("become-educator");
+}
+
+function isStudentJoinPath(pathname) {
+  const normalizedPath = decodeURIComponent(String(pathname || "")).trim().toLowerCase().replace(/\/+$/, "");
+  return normalizedPath.endsWith("join student") || normalizedPath.endsWith("join-student");
+}
+
+function isQuizPath(pathname) {
+  const normalizedPath = decodeURIComponent(String(pathname || "")).trim().toLowerCase().replace(/\/+$/, "");
+  return normalizedPath.endsWith("practice quiz") || normalizedPath.endsWith("practice-quiz");
+}
+
+function isBookEducatorPath(pathname) {
+  const normalizedPath = decodeURIComponent(String(pathname || "")).trim().toLowerCase().replace(/\/+$/, "");
+  return normalizedPath.endsWith("book educator") || normalizedPath.endsWith("book-educator");
+}
+
+function isEducatorAuthPath(pathname) {
+  const normalizedPath = decodeURIComponent(String(pathname || "")).trim().toLowerCase().replace(/\/+$/, "");
+  return normalizedPath.endsWith("educator login") || normalizedPath.endsWith("educator-login");
+}
+
+function getPublicScreenFromPath(pathname) {
+  if (isEducatorJoinPath(pathname)) {
+    return "become-educator";
+  }
+  if (isEducatorAuthPath(pathname)) {
+    return "educator-login";
+  }
+  if (isStudentJoinPath(pathname)) {
+    return "join-student";
+  }
+  if (isQuizPath(pathname)) {
+    return "practice-quiz";
+  }
+  if (isBookEducatorPath(pathname)) {
+    return "book-educator";
+  }
+  return "home";
+}
+
 function getRoleFromPathname(pathname) {
+  if (isEducatorJoinPath(pathname) || isEducatorAuthPath(pathname) || isStudentJoinPath(pathname) || isQuizPath(pathname) || isBookEducatorPath(pathname)) {
+    return null;
+  }
   const normalizedPath = decodeURIComponent(String(pathname || "")).trim().toLowerCase();
   if (normalizedPath.endsWith("student portal")) {
     return "student";
@@ -175,19 +480,66 @@ function getRoleFromPathname(pathname) {
   return null;
 }
 
+function RoleArtEducator() {
+  return (
+    <svg className="role-art" viewBox="0 0 120 120" aria-hidden="true">
+      <circle cx="60" cy="62" r="46" fill="#f5c518" />
+      <circle cx="60" cy="42" r="14" fill="#c4a574" />
+      <path d="M42 48c4-16 32-16 36 0 1 6-6 10-18 10s-19-4-18-10z" fill="#5b3a2a" />
+      <path d="M38 78c4-16 40-16 44 0v18H38z" fill="#7dd3fc" />
+      <path d="M36 86h48v22c0 6-8 10-24 10s-24-4-24-10z" fill="#ea580c" />
+      <rect x="68" y="70" width="22" height="16" rx="3" fill="#38bdf8" />
+    </svg>
+  );
+}
+
+function RoleArtStudent() {
+  return (
+    <svg className="role-art" viewBox="0 0 120 120" aria-hidden="true">
+      <circle cx="60" cy="62" r="46" fill="#fde68a" />
+      <rect x="22" y="86" width="76" height="10" rx="2" fill="#a8a29e" />
+      <rect x="28" y="78" width="40" height="10" rx="2" fill="#7c3aed" />
+      <circle cx="58" cy="44" r="13" fill="#e8b896" />
+      <path d="M44 50c3-12 26-12 30 2-8 6-22 6-30-2z" fill="#1c1917" />
+      <path d="M42 70c6-12 32-12 38 2v16H42z" fill="#ef4444" />
+      <path d="M40 82h44v14H40z" fill="#ea580c" />
+      <rect x="70" y="64" width="22" height="14" rx="2" fill="#111827" />
+    </svg>
+  );
+}
+
 function formatPortalRoleLabel(role) {
   const normalized = String(role || "").trim().toLowerCase();
   if (!normalized) return "User";
+  if (normalized === "teacher") return "Educator";
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+function isPrivilegedAccount(role) {
+  return ["admin", "supervisor"].includes(String(role || "").trim().toLowerCase());
+}
+
+function canViewAccounts(role) {
+  return ["accounts", "admin", "supervisor"].includes(String(role || "").trim().toLowerCase());
+}
+
+function uniquePeople(people) {
+  const seen = new Set();
+  return people.filter((person) => {
+    if (!person || seen.has(person.id)) {
+      return false;
+    }
+    seen.add(person.id);
+    return true;
+  });
 }
 
 function App() {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
-  const previewVideoUrl = import.meta.env.VITE_PREVIEW_VIDEO_URL || "https://www.youtube-nocookie.com/embed/ysz5S6PUM-U";
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [openNav, setOpenNav] = useState(null);
   const [signInMenuOpen, setSignInMenuOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState(defaultCategory);
-  const [portalScreen, setPortalScreen] = useState("home");
+  const [portalScreen, setPortalScreen] = useState(() => getPublicScreenFromPath(window.location.pathname));
   const [signInRole, setSignInRole] = useState("student");
   const [routeRole, setRouteRole] = useState(() => getRoleFromPathname(window.location.pathname));
   const [loginIdentifier, setLoginIdentifier] = useState("");
@@ -197,8 +549,16 @@ function App() {
   const [loginMessage, setLoginMessage] = useState("Use your username or registered phone number with password to continue.");
   const [callbackMessage, setCallbackMessage] = useState("Request a callback and we will match the learner with the right advisor.");
   const [taglineIndex, setTaglineIndex] = useState(0);
+  const [homeSlide, setHomeSlide] = useState(0);
+  const [homeSlidePaused, setHomeSlidePaused] = useState(false);
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
+  const whyViewportRef = useRef(null);
+  const sessionPasswordRef = useRef("");
   const [currentUser, setCurrentUser] = useState(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [mappedRoster, setMappedRoster] = useState([]);
+  const [mapStudentId, setMapStudentId] = useState("");
+  const [mapTeacherId, setMapTeacherId] = useState("");
+  const [assignmentMessage, setAssignmentMessage] = useState("Load users, then map a student with an educator.");
   const [authMessage, setAuthMessage] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [adminActionMessage, setAdminActionMessage] = useState("Admin actions require password verification.");
@@ -216,6 +576,10 @@ function App() {
   });
   const [rowResetPasswords, setRowResetPasswords] = useState({});
   const [rowActionStatus, setRowActionStatus] = useState({});
+  const directoryStudents = adminUsers.filter((user) => String(user.role || "").toLowerCase() === "student" && String(user.status || "").toLowerCase() === "approved");
+  const directoryTeachers = adminUsers.filter((user) => String(user.role || "").toLowerCase() === "teacher" && String(user.status || "").toLowerCase() === "approved");
+  const assignedEducators = uniquePeople(mappedRoster.map((item) => item.teacher));
+  const assignedLearners = uniquePeople(mappedRoster.map((item) => item.student));
 
   const activeSubjects = useMemo(
     () => subjectGroups.find((group) => group.name === activeCategory)?.subjects ?? [],
@@ -225,17 +589,23 @@ function App() {
   const activePortalRole = routeRole || signInRole || "student";
   const activeSignInProfile = signInProfiles[activePortalRole] || signInProfiles.student;
   const currentUserRole = String(currentUser?.role || "").toLowerCase();
-  const isAdmin = ["admin", "supervisor"].includes(currentUserRole);
+  const isAdmin = isPrivilegedAccount(currentUserRole);
   const learnerName = currentUser?.full_name || currentUser?.name || "Learner";
   const roleLabel = formatPortalRoleLabel(currentUserRole || activePortalRole);
   const isAccountsPortal = activePortalRole === "accounts";
-  const canAccessAccountsPage = ["accounts", "admin", "supervisor"].includes(currentUserRole);
-
+  const canAccessAccountsPage = canViewAccounts(currentUserRole);
+  const accountsAccessDenied = Boolean(currentUser) && isAccountsPortal && !canAccessAccountsPage;
   const showAccountsDashboard = isAccountsPortal && canAccessAccountsPage && portalScreen === "accounts-dashboard";
   const showMarketingContent = portalScreen === "home" && !showPortalSection;
+  const showEducatorJoin = portalScreen === "become-educator" && !showPortalSection;
+  const showStudentJoin = portalScreen === "join-student" && !showPortalSection;
+  const showQuizPage = portalScreen === "practice-quiz" && !showPortalSection;
+  const showBookEducator = portalScreen === "book-educator" && !showPortalSection;
+  const showEducatorAuth = portalScreen === "educator-login" && !showPortalSection;
+  const showPublicPage = showMarketingContent || showEducatorJoin || showEducatorAuth || showStudentJoin || showQuizPage || showBookEducator;
   const showPortalPreviewSection = showPortalSection && !showAccountsDashboard;
-  const showContactSection = showMarketingContent;
-  const showStudentPortalTabs = Boolean(currentUser) && !isAccountsPortal && !isAdmin;
+  const showStudentPortalTabs = Boolean(currentUser) && ["student", "teacher"].includes(activePortalRole) && (currentUserRole === activePortalRole || isAdmin);
+  const showPrivilegedWorkspaceTabs = Boolean(currentUser) && isAdmin;
   const showStudentSupportContent = !showAccountsDashboard;
   const isStudentLoginView = activePortalRole === "student" && portalScreen === "login";
   const isStudentWorkspaceView = activePortalRole === "student" && ["dashboard", "live"].includes(portalScreen);
@@ -273,7 +643,17 @@ function App() {
 
   useEffect(() => {
     const handlePopState = () => {
-      setRouteRole(getRoleFromPathname(window.location.pathname));
+      const path = window.location.pathname;
+      const publicScreen = getPublicScreenFromPath(path);
+      if (publicScreen !== "home") {
+        setRouteRole(null);
+        setPortalScreen(publicScreen);
+        return;
+      }
+      setRouteRole(getRoleFromPathname(path));
+      if (!getRoleFromPathname(path)) {
+        setPortalScreen("home");
+      }
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -281,11 +661,14 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (routeRole) {
-      setSignInRole(routeRole);
+    if (!routeRole) {
+      return;
+    }
+    setSignInRole(routeRole);
+    if (!currentUser) {
       setPortalScreen("login");
     }
-  }, [routeRole]);
+  }, [routeRole, currentUser]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -295,35 +678,71 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!previewOpen) {
+    if (!showMarketingContent || homeSlidePaused) {
       return undefined;
     }
-
-    function handleEscape(event) {
-      if (event.key === "Escape") {
-        setPreviewOpen(false);
-      }
-    }
-
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [previewOpen]);
+    const interval = setInterval(() => {
+      goToHeroPage(homeSlide + 1);
+    }, 5500);
+    return () => clearInterval(interval);
+  }, [showMarketingContent, homeSlidePaused, homeSlide]);
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (signInMenuRef.current && !signInMenuRef.current.contains(event.target)) {
+    if (!signInMenuOpen) {
+      return undefined;
+    }
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
         setSignInMenuOpen(false);
       }
     }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [signInMenuOpen]);
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  function goToHeroPage(index) {
+    const next = ((index % heroPages.length) + heroPages.length) % heroPages.length;
+    setHomeSlide(next);
+  }
+
+  function handleHomeHashNav(event, id) {
+    if (id === "become-educator") {
+      event.preventDefault();
+      goToEducatorJoin();
+      return;
+    }
+    if (id === "practice-quiz") {
+      event.preventDefault();
+      goToQuizPage();
+      return;
+    }
+    if (id === "book-educator" || id === "contact") {
+      event.preventDefault();
+      if (showMarketingContent && id === "contact") {
+        setOpenNav(null);
+        document.getElementById("contact")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      goToBookEducator();
+      return;
+    }
+    if (!showMarketingContent) {
+      return;
+    }
+    event.preventDefault();
+    setOpenNav(null);
+    if (id === "top") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   function goToHomePage() {
     setPortalScreen("home");
     setRouteRole(null);
     setSignInMenuOpen(false);
+    setHomeSlide(0);
     if (decodeURIComponent(window.location.pathname) !== "/") {
       window.history.pushState({}, "", "/");
     }
@@ -361,14 +780,32 @@ function App() {
       const signedInRole = String(signedInUser?.role || "").toLowerCase();
 
       setCurrentUser(signedInUser);
+      sessionPasswordRef.current = password;
+      setMappedRoster(Array.isArray(payload.assignments) ? payload.assignments : []);
       setAuthMessage(payload.message || "Signed in successfully.");
       setLoginMessage(payload.message || "Signed in successfully.");
+      const privileged = isPrivilegedAccount(signedInRole);
       if (activeAuthRole === "accounts") {
+        if (!canViewAccounts(signedInRole)) {
+          setCurrentUser(null);
+          setAuthMessage("Accounts is only available to supervisor and accounts users.");
+          setLoginMessage("Students and educators cannot open the accounts workspace.");
+          return;
+        }
+        goToSignInRoute("accounts");
         setPortalScreen("accounts-dashboard");
-      } else if (signedInRole === "student") {
+      } else if (activeAuthRole === "teacher") {
+        goToSignInRoute("teacher");
         setPortalScreen("dashboard");
-      } else if (["admin", "supervisor"].includes(signedInRole)) {
+      } else if (activeAuthRole === "student" || signedInRole === "student") {
+        goToSignInRoute("student");
+        setPortalScreen("dashboard");
+      } else if (privileged) {
+        goToSignInRoute("student");
         setPortalScreen("admin-dashboard");
+      } else {
+        goToSignInRoute(signedInRole);
+        setPortalScreen("login");
       }
       form.reset();
       setLoginIdentifier("");
@@ -486,6 +923,9 @@ function App() {
     const result = await runAdminAction("/api/admin/users/list", {});
     if (result?.ok && Array.isArray(result.users)) {
       setAdminUsers(result.users);
+      if (Array.isArray(result.assignments)) {
+        setMappedRoster(result.assignments);
+      }
       if (result.approvalContacts?.admin || result.approvalContacts?.supervisor) {
         setApprovalContacts({
           admin: {
@@ -509,6 +949,38 @@ function App() {
       });
     }
     setAdminUsersLoading(false);
+  }
+
+  async function handleMapAssignment(event) {
+    event.preventDefault();
+    if (!mapStudentId || !mapTeacherId) {
+      setAssignmentMessage("Choose one student and one educator to map.");
+      return;
+    }
+    const result = await runAdminAction("/api/admin/assignments", {
+      studentId: Number(mapStudentId),
+      teacherId: Number(mapTeacherId)
+    });
+    if (result?.ok) {
+      setAssignmentMessage(result.message || "Student mapped with educator.");
+      if (Array.isArray(result.assignments)) {
+        setMappedRoster(result.assignments);
+      }
+      setMapStudentId("");
+      setMapTeacherId("");
+    } else {
+      setAssignmentMessage("Could not save the mapping. Check supervisor password and try again.");
+    }
+  }
+
+  async function handleRemoveAssignment(assignmentId) {
+    const result = await runAdminAction(`/api/admin/assignments/${encodeURIComponent(assignmentId)}/remove`, {});
+    if (result?.ok) {
+      setAssignmentMessage(result.message || "Mapping removed.");
+      if (Array.isArray(result.assignments)) {
+        setMappedRoster(result.assignments);
+      }
+    }
   }
 
   async function handleRowApproveUser(phone) {
@@ -647,20 +1119,103 @@ function App() {
     setRouteRole(nextRole);
   }
 
-  function goToLoginPanel(role = "student") {
+  function openWorkspace(role) {
+    if (role === "accounts") {
+      if (!canViewAccounts(currentUser?.role)) {
+        setAuthMessage("Students and educators cannot open the accounts workspace.");
+        return;
+      }
+      goToSignInRoute("accounts");
+      setPortalScreen("accounts-dashboard");
+      return;
+    }
+    if (role === "admin") {
+      goToSignInRoute(activePortalRole === "teacher" ? "teacher" : "student");
+      setPortalScreen("admin-dashboard");
+      return;
+    }
+    goToSignInRoute(role);
+    setPortalScreen("dashboard");
+  }
+
+  function goToLoginPanel(role = "student", mode = "login") {
     const nextRole = signInProfiles[role] ? role : "student";
     setSignInRole(nextRole);
-    setAuthMode("login");
+    setAuthMode(mode);
     setPortalScreen("login");
     goToSignInRoute(nextRole);
-    const loginSection = document.getElementById("about");
+    const loginSection = document.getElementById("portal") || document.getElementById("contact");
     if (loginSection) {
       loginSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }
 
+  function shiftEducatorWhy(direction) {
+    const viewport = whyViewportRef.current;
+    if (!viewport) {
+      return;
+    }
+    const card = viewport.querySelector(".why-card");
+    const amount = card ? card.getBoundingClientRect().width + 16 : viewport.clientWidth * 0.4;
+    viewport.scrollBy({ left: direction * amount, behavior: "smooth" });
+  }
+
+  function goToPublicScreen(screen, path) {
+    setSignInMenuOpen(false);
+    setOpenNav(null);
+    setRouteRole(null);
+    setPortalScreen(screen);
+    if (decodeURIComponent(window.location.pathname) !== path) {
+      window.history.pushState({}, "", path);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function goToEducatorAuth(mode = "login") {
+    setSignInRole("teacher");
+    setAuthMode(mode);
+    setShowAuthPassword(false);
+    goToPublicScreen("educator-login", "/educator-login");
+  }
+
+  function goToEducatorJoin() {
+    goToPublicScreen("become-educator", "/become-educator");
+  }
+
+  function goToQuizPage() {
+    goToPublicScreen("practice-quiz", "/practice-quiz");
+  }
+
+  function goToBookEducator() {
+    goToPublicScreen("book-educator", "/book-educator");
+  }
+
+  function goToStudentJoin() {
+    setSignInRole("student");
+    setAuthMode("login");
+    setShowAuthPassword(false);
+    goToPublicScreen("join-student", "/join-student");
+  }
+
+  function handleHeroCta(theme) {
+    if (theme === "quiz") {
+      goToQuizPage();
+      return;
+    }
+    if (theme === "educator") {
+      goToEducatorJoin();
+      return;
+    }
+    goToBookEducator();
+  }
+
   function handleLogout() {
     setCurrentUser(null);
+    sessionPasswordRef.current = "";
+    setMappedRoster([]);
+    setMapStudentId("");
+    setMapTeacherId("");
+    setAssignmentMessage("Load users, then map a student with an educator.");
     setAuthMode("login");
     setLoginIdentifier("");
     setSignInMenuOpen(false);
@@ -686,38 +1241,39 @@ function App() {
   }
 
   return (
-    <div className="site-shell">
+    <div className={`site-shell page-fit${showPublicPage ? " page-fit--home" : " page-fit--app"}`}>
       {showGlobalHomeButton ? (
         <button className="floating-home-button" type="button" onClick={goToHomePage}>
           Back to Home
         </button>
       ) : null}
-      <div className="atmosphere" aria-hidden="true">
-        <span className="orb orb-one" />
-        <span className="orb orb-two" />
-        <span className="orb orb-three" />
-      </div>
 
       <header className="site-header" id="top">
         <div className="top-nav">
           <button className="brand-block" type="button" onClick={goToHomePage}>
-            <div className="brand-mark">C</div>
-            <div>
-              <div className="brand-title">crablearn</div>
-              <div className="brand-subtitle">online Academy at its Best</div>
-            </div>
+            <span className="brand-word">crab</span>
+            <span className="brand-word brand-word--glow">learn.in</span>
           </button>
 
           <nav className="main-nav">
+            {showPublicPage ? (
+              showEducatorJoin || showEducatorAuth || showStudentJoin || showQuizPage || showBookEducator ? (
+                <button className="nav-link nav-button" type="button" onClick={goToHomePage}>Home</button>
+              ) : (
+                <a className="nav-link" href="#top" onClick={(event) => handleHomeHashNav(event, "top")}>Home</a>
+              )
+            ) : null}
+            <a className="nav-link" href="#about" onClick={(event) => handleHomeHashNav(event, "about")}>About</a>
+            {showMarketingContent ? (
             <div className="menu-anchor">
               <button
                 className="nav-link nav-button"
                 type="button"
-                onClick={() => setMenuOpen((open) => !open)}
+                  onClick={() => setOpenNav((v) => (v === "courses" ? null : "courses"))}
               >
-                Subjects & Pricing
+                  All Courses <span className="nav-chevron" aria-hidden="true" />
               </button>
-              {menuOpen ? (
+                {openNav === "courses" ? (
                 <div className="mega-menu">
                   <div className="mega-menu-column">
                     {subjectGroups.map((group) => (
@@ -736,36 +1292,81 @@ function App() {
                   </div>
                   <div className="mega-menu-column detail">
                     {activeSubjects.map((subject) => (
-                      <div className="subject-leaf" key={subject}>{subject}</div>
+                        <a className="subject-leaf" href="#courses" key={subject} onClick={(event) => handleHomeHashNav(event, "courses")}>{subject}</a>
                     ))}
                   </div>
                 </div>
               ) : null}
             </div>
-            {showMarketingContent ? <a className="nav-link" href="#workflow">How it Works</a> : null}
-            <a className="nav-link" href="#about">About Us</a>
-            {showMarketingContent ? <a className="nav-link" href="#contact">Contact Us</a> : null}
+            ) : null}
+            {showMarketingContent ? (
+              <div className="menu-anchor">
+                <button className="nav-link nav-button" type="button" onClick={() => setOpenNav((v) => (v === "syllabus" ? null : "syllabus"))}>
+                  Syllabus <span className="nav-chevron" aria-hidden="true" />
+                </button>
+                {openNav === "syllabus" ? (
+                  <div className="simple-menu">
+                    {syllabusLinks.map((item) => (
+                      <a key={item} href="#syllabus" onClick={(event) => handleHomeHashNav(event, "syllabus")}>{item}</a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+            {showMarketingContent ? <a className="nav-link" href="#contact" onClick={(event) => handleHomeHashNav(event, "contact")}>Contact</a> : null}
+            {showMarketingContent ? (
+              <div className="menu-anchor">
+                <button className="nav-link nav-button" type="button" onClick={() => setOpenNav((v) => (v === "more" ? null : "more"))}>
+                  More <span className="nav-chevron" aria-hidden="true" />
+                </button>
+                {openNav === "more" ? (
+                  <div className="simple-menu">
+                    {moreLinks.map((item) => (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        onClick={(event) => {
+                          if (item.label === "Become Educator") {
+                            event.preventDefault();
+                            goToEducatorJoin();
+                            return;
+                          }
+                          if (item.label === "Practice Quiz") {
+                            event.preventDefault();
+                            goToQuizPage();
+                            return;
+                          }
+                          if (item.label === "Book Educator") {
+                            event.preventDefault();
+                            goToBookEducator();
+                            return;
+                          }
+                          handleHomeHashNav(event, item.href.replace("#", ""));
+                        }}
+                      >{item.label}</a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </nav>
 
           <div className="nav-actions">
-            {showMarketingContent ? <a className="phone-link" href="#contact">Call us</a> : null}
-            {currentUser ? <div className="session-pill">{roleLabel} signed in</div> : null}
-            {!currentUser && showMarketingContent ? (
-              <div className="signin-menu" data-testid="signin-menu" ref={signInMenuRef} data-open={signInMenuOpen ? "true" : "false"}>
-                <button className="button ghost signin-trigger" type="button" onClick={handleSignInToggle} aria-haspopup="true" aria-expanded={signInMenuOpen} data-testid="signin-trigger">
-                  <span>Sign in</span>
-                  <span className="signin-trigger-caret" aria-hidden="true" />
-                </button>
-                <div className="signin-dropdown" role="menu" aria-label="Sign in options">
-                  <button type="button" className="signin-option" role="menuitem" onClick={() => handleSignInRole("student")} data-testid="signin-option-student">student login</button>
-                  <button type="button" className="signin-option" role="menuitem" onClick={() => handleSignInRole("teacher")} data-testid="signin-option-teacher">teacher login</button>
-                  <button type="button" className="signin-option" role="menuitem" onClick={() => handleSignInRole("engineer")} data-testid="signin-option-engineer">engineer login</button>
-                  <button type="button" className="signin-option" role="menuitem" onClick={() => handleSignInRole("accounts")} data-testid="signin-option-accounts">accounts login</button>
-                </div>
-              </div>
+            {showMarketingContent ? (
+              <a className="nav-search" href="#contact" aria-label="Search programs" onClick={(event) => handleHomeHashNav(event, "contact")}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                  <path d="M20 20L16.5 16.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </a>
             ) : null}
-            {currentUser ? <button className="button ghost" type="button" onClick={handleLogout}>Sign out</button> : null}
-            {showMarketingContent ? <a className="button solid" href="#contact">Request a callback</a> : null}
+            {currentUser ? <div className="session-pill">{roleLabel} signed in</div> : null}
+            {!currentUser && showPublicPage ? (
+              <button className="login-register-btn" type="button" onClick={handleSignInToggle} aria-haspopup="dialog" aria-expanded={signInMenuOpen} data-testid="signin-trigger">
+                Login/Register
+                </button>
+            ) : null}
+            {currentUser ? <button className="login-register-btn" type="button" onClick={handleLogout}>Sign out</button> : null}
           </div>
         </div>
 
@@ -773,40 +1374,111 @@ function App() {
           <div className="auth-feedback" role="status" aria-live="polite">{authMessage}</div>
         ) : null}
 
-        {showMarketingContent ? (
-          <>
-            <div className="season-banner">
-              <div className="season-art">SUN</div>
-              <div className="season-copy">
-                <h2>Beat the Summer Slide</h2>
-                <p>Join our Summer Program 2026 and help your child stay ahead, strengthen skills and gain confidence for the upcoming school year.</p>
+      </header>
+
+      {signInMenuOpen ? (
+        <div className="role-modal-backdrop" onClick={() => setSignInMenuOpen(false)}>
+          <div
+            className="role-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="role-modal-title"
+            data-testid="signin-menu"
+            ref={signInMenuRef}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button className="role-modal-close" type="button" onClick={() => setSignInMenuOpen(false)} aria-label="Close">×</button>
+            <h2 id="role-modal-title">Select Your Position!</h2>
+            <div className="role-modal-cards">
+              <button className="role-card" type="button" onClick={() => goToEducatorAuth("login")} data-testid="signin-option-teacher">
+                <RoleArtEducator />
+                <span>Educator</span>
+              </button>
+              <button className="role-card" type="button" onClick={goToStudentJoin} data-testid="signin-option-student">
+                <RoleArtStudent />
+                <span>Student</span>
+              </button>
               </div>
-              <button className="button solid banner-button" type="button" onClick={goToHomePage}>Summer Academy 2026</button>
+            <div className="role-modal-staff">
+              <button type="button" className="signin-option" onClick={() => handleSignInRole("engineer")} data-testid="signin-option-engineer">engineer login</button>
+              <button type="button" className="signin-option" onClick={() => handleSignInRole("accounts")} data-testid="signin-option-accounts">accounts login</button>
             </div>
+          </div>
+        </div>
+      ) : null}
 
-            <section className="hero-panel">
-              <div className="hero-content">
-                <p className="eyebrow">{taglines[taglineIndex]}</p>
-                <h1>Secure live classes, guided fee management, and parent-first visibility.</h1>
-                <ul className="hero-list">
-                  {featureList.map((item) => (
-                    <li key={item}>{item}</li>
+      {showMarketingContent ? (
+        <div
+          className="home-deck"
+          onFocusCapture={(event) => {
+            if (["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName)) {
+              setHomeSlidePaused(true);
+            }
+          }}
+          onBlurCapture={(event) => {
+            const next = event.relatedTarget;
+            if (!next || !["INPUT", "TEXTAREA", "SELECT"].includes(next.tagName)) {
+              setHomeSlidePaused(false);
+            }
+          }}
+        >
+            <section className="promo-hero" aria-label="Featured pages">
+              <button className="home-slide-arrow home-slide-arrow--prev" type="button" onClick={() => goToHeroPage(homeSlide - 1)} aria-label="Previous page">‹</button>
+              <button className="home-slide-arrow home-slide-arrow--next" type="button" onClick={() => goToHeroPage(homeSlide + 1)} aria-label="Next page">›</button>
+              <div className="promo-viewport">
+                <div className="promo-track" style={{ transform: `translateX(-${homeSlide * (100 / heroPages.length)}%)` }}>
+                  {heroPages.map((page) => (
+                    <article className="promo-page promo-page--book" key={page.theme} aria-label={page.title}>
+                      <div className="promo-visual" aria-hidden="true">
+                        <div className="promo-blob">
+                          {page.chips.map((chip) => (
+                            <span className="promo-chip" key={chip}>{chip}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="promo-copy promo-copy--center">
+                        <h1>{page.title}</h1>
+                        <p className="promo-kicker">{page.kicker}</p>
+                        <button className="promo-link" type="button" onClick={() => handleHeroCta(page.theme)}>
+                          {page.linkLabel}
+                        </button>
+                        <button
+                          className="button coral"
+                          type="button"
+                          onClick={() => handleHeroCta(page.theme)}
+                        >
+                          {page.ctaLabel}
+                        </button>
+                      </div>
+                    </article>
                   ))}
-                </ul>
-                <div className="hero-actions">
-                  <a className="button coral" href="#contact">Request a callback</a>
                 </div>
               </div>
-
-              <div className="hero-video-card">
-                <div className="video-frame">
-                  <button className="video-play" type="button" onClick={() => setPreviewOpen(true)} aria-label="Open class overview video">
-                    Play
-                  </button>
-                </div>
-                <div className="video-caption">Explore the live class experience, parent reporting, and secure dashboard workflow.</div>
+              <div className="promo-dots" role="tablist" aria-label="Hero pages">
+                {heroPages.map((page, index) => (
+                  <button
+                    key={page.title}
+                    className={index === homeSlide ? "active" : ""}
+                    type="button"
+                    role="tab"
+                    aria-selected={index === homeSlide}
+                    aria-label={page.title}
+                    onClick={() => goToHeroPage(index)}
+                  />
+                ))}
               </div>
             </section>
+
+            <p className="home-intro">
+              Crab Learn is a leading home tuition and online education platform in India, offering personalized one-on-one academic tutoring either at home or online, delivered by expert and verified educators.
+            </p>
+            <p className="home-intro">
+              With experienced tutors, customized lesson plans, and coverage across major Indian boards (CBSE, ICSE, State Boards), we help students excel academically through both in-home and virtual classes on this Student Learning Platform.
+            </p>
+            <p className="home-intro">
+              Whether you're a student seeking private guidance or a teacher eager to share knowledge, we’ve got you covered!
+            </p>
+            <p className="home-hub-line">crablearn.in — Your Personalized Home Tuition Hub</p>
 
             <section className="trust-ticker" aria-label="Trust badges">
               <div className="ticker-track">
@@ -815,13 +1487,7 @@ function App() {
                 ))}
               </div>
             </section>
-          </>
-        ) : null}
-      </header>
 
-      <main>
-        {showMarketingContent ? (
-          <>
             <section className="section proof-strip">
               {proofStats.map((stat) => (
                 <article className="proof-card" key={stat.label}>
@@ -831,16 +1497,29 @@ function App() {
               ))}
             </section>
 
-            <section className="section split-section" id="workflow">
+            <section className="section split-section" id="about">
               <div>
-                <p className="section-kicker">Project overview</p>
-                <h2>crablearn website with secure student approval and live class access.</h2>
+                <p className="section-kicker">Crab Learn – Personalized Home Tutoring</p>
+                <h2>The Best Platform For Students</h2>
                 <p className="section-text">
-                  This app mirrors the specification: responsive marketing site, login and approval style portal, secure live class cards, fee status, and member-only dashboard behavior.
+                  Crab Learn is designed to support students by bringing high-quality education directly to their homes. We believe every learner deserves personalized attention, and that’s why we offer expert home tutoring tailored to each child’s pace and style.
+                </p>
+                <p className="section-text">
+                  As the Best Platform For Students, our mission is to make learning simple, engaging, and result-oriented. Parents and learners call us the Best Learning Platform because we focus on real improvement—strong basics, better scores, and growing confidence.
+                </p>
+                <p className="section-kicker">Expert Home Tutors for CBSE Classes</p>
+                <p className="section-text">
+                  Our highly qualified Home Tutors for CBSE classes understand the curriculum well and help students stay prepared for school exams, competitive goals, and future studies. We provide flexible scheduling, one-to-one interaction, doubt-clearing sessions, and a learning plan crafted for each student’s needs.
+                </p>
+                <p className="section-text">
+                  At Crab Learn, education isn’t just about marks—it’s about progress, curiosity, and academic success. We are here to guide students step-by-step, making sure they enjoy learning and achieve their full potential.
                 </p>
               </div>
               <div className="work-card">
-                <p className="section-kicker">Scope of work</p>
+                <p className="section-kicker">Why Crab Learn Home Tuition Works Better</p>
+                <p className="section-text">
+                  Crab Learn Home tuition provides personalized learning, real-time feedback, and fewer distractions, leading to faster academic growth and confidence.
+                </p>
                 <ul className="work-list">
                   {workItems.map((item) => (
                     <li key={item}>{item}</li>
@@ -848,11 +1527,694 @@ function App() {
                 </ul>
               </div>
             </section>
-          </>
+
+            <section className="section">
+              <p className="section-kicker">Our Educational Excellence in Personalized Learning</p>
+              <h2>Discover our commitment to top-notch solutions for learners and educators.</h2>
+              <div className="program-grid">
+                {excellenceCards.map((card) => (
+                  <article className="program-card" key={card.title}>
+                    <h3>{card.title}</h3>
+                    <p>{card.text}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="section" id="courses">
+              <p className="section-kicker">One-on-One Live Learning —</p>
+              <h2>Made for Every Student</h2>
+              <p className="section-text">Boost understanding, confidence, and performance with personalised 1-on-1 sessions.</p>
+              <div className="focus-grid">
+                {focusCards.map((card) => (
+                  <article className="focus-card" key={card.title}>
+                    <span className="focus-icon" aria-hidden="true">{card.icon}</span>
+                    <h3>{card.title}</h3>
+                    <p>{card.text}</p>
+                    <a className="text-link" href="#contact" onClick={(event) => handleHomeHashNav(event, "contact")}>{card.cta}</a>
+                  </article>
+                ))}
+              </div>
+              <p className="section-kicker" style={{ marginTop: "2rem" }}>Achieve Your Goals</p>
+              <h2>Book certified and selected educators with crablearn.in</h2>
+              <div className="program-grid program-grid--wide">
+                {programCards.map((card) => (
+                  <article className="program-card" key={card.title}>
+                    <p className="section-kicker">crablearn.in</p>
+                    <h3>{card.title}</h3>
+                    <p>{card.text}</p>
+                    <a className="button ghost" href={card.href} onClick={(event) => handleHomeHashNav(event, "contact")}>{card.cta}</a>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="section join-band">
+              <div>
+                <p className="section-kicker">Join Us As</p>
+                <h2>Book Educator or Become Educator</h2>
+              </div>
+              <div className="hero-actions">
+                <a className="button coral" href="#book-educator" onClick={(event) => handleHomeHashNav(event, "book-educator")}>Book Educator</a>
+                <button className="button solid" type="button" onClick={goToEducatorJoin}>Become Educator</button>
+              </div>
+            </section>
+
+            <section id="featured" aria-label="Featured">
+              <section className="section">
+                <p className="section-kicker">Featured Crab Learn Courses</p>
+                <h2>Learn Anywhere. Master Your Concepts. Track Your Progress.</h2>
+                <div className="focus-grid focus-grid-3">
+                  {featuredCourseCards.map((card) => (
+                    <article className="focus-card" key={card.title}>
+                      <h3>{card.title}</h3>
+                      <p>{card.text}</p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+              <section className="section">
+                <p className="section-kicker">Crab Learn Online Quiz</p>
+                <h2>Ace the Quiz: Test Your Knowledge Online!</h2>
+                <ul className="work-list">
+                  {quizPoints.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <button className="button coral" type="button" onClick={goToQuizPage}>Online Quiz</button>
+              </section>
+              <section className="section">
+                <p className="section-kicker">Instant Learning Resources</p>
+                <h2>Download the Crab Learn app now</h2>
+                <p className="section-text">Get the Crab Learn App Now</p>
+                <div className="store-row">
+                  <span className="store-badge">GET IT ON Google Play</span>
+                  <span className="store-badge">GET IT ON App Store</span>
+                </div>
+                <div className="focus-grid">
+                  {trendCards.map((card) => (
+                    <article className="focus-card" key={card.title}>
+                      <h3>{card.title}</h3>
+                      <p>{card.text}</p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </section>
+
+            <section className="section" id="syllabus" aria-label="Syllabus and study material">
+              <p className="section-kicker">Study material</p>
+              <h2>Syllabus, sample papers, formulas, and state boards</h2>
+              <div className="resource-grid">
+                <div>
+                  <p className="section-kicker">Syllabus</p>
+                  {cbseClasses.map((item) => (
+                    <span className="resource-item" key={`page-syl-${item}`}>{item}</span>
+                  ))}
+                </div>
+                <div>
+                  <p className="section-kicker">CBSE Sample Papers</p>
+                  {cbseSamplePapers.map((item) => (
+                    <span className="resource-item" key={item}>{item}</span>
+                  ))}
+                  <p className="section-kicker">ICSE Sample Papers</p>
+                  {icseSamplePapers.map((item) => (
+                    <span className="resource-item" key={item}>{item}</span>
+                  ))}
+                </div>
+                <div>
+                  <p className="section-kicker">Formula</p>
+                  {mathsFormulas.map((item) => (
+                    <span className="resource-item" key={item}>{item}</span>
+                  ))}
+                  <p className="section-kicker">Study material</p>
+                  {studyMaterial.map((item) => (
+                    <span className="resource-item" key={item}>{item}</span>
+                  ))}
+                </div>
+                <div>
+                  <p className="section-kicker">Previous Year Question Papers</p>
+                  {previousYearPapers.map((item) => (
+                    <span className="resource-item" key={item}>{item}</span>
+                  ))}
+                  <p className="section-kicker">Courses</p>
+                  {coursePacks.map((item) => (
+                    <span className="resource-item" key={`page-${item}`}>{item}</span>
+                  ))}
+                </div>
+                <div>
+                  <p className="section-kicker">State Board</p>
+                  {stateBoards.map((item) => (
+                    <span className="resource-item" key={item}>{item}</span>
+                  ))}
+                </div>
+                <div>
+                  <p className="section-kicker">Exam Preparation For Class 12</p>
+                  {class12Subjects.map((item) => (
+                    <span className="resource-item" key={`page-c12-${item}`}>{item}</span>
+                  ))}
+                  <p className="section-kicker">Exam Preparation For Class 11</p>
+                  {class11Subjects.map((item) => (
+                    <span className="resource-item" key={`page-c11-${item}`}>{item}</span>
+                  ))}
+                  <p className="section-kicker">Exam Preparation For Class 10</p>
+                  {class10Subjects.map((item) => (
+                    <span className="resource-item" key={`page-c10-${item}`}>{item}</span>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section id="workflow" aria-label="How it works">
+            <section className="section">
+              <p className="section-kicker">Discover the Crab Learn advantage</p>
+              <h2>Learning has never been this easy!</h2>
+              <div className="focus-grid focus-grid-3">
+                {advantages.map((card) => (
+                  <article className="focus-card" key={card.title}>
+                    <h3>{card.title}</h3>
+                    <p>{card.text}</p>
+                  </article>
+                ))}
+              </div>
+              <div className="how-grid" style={{ marginTop: "1.4rem" }}>
+                {easySteps.map((step) => (
+                  <article className="how-card" key={step.title}>
+                    <h3>{step.title}</h3>
+                    <p>{step.text}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="section">
+              <p className="section-kicker">How Crab Learn Work ?</p>
+              <h2>From matching an educator to celebrating milestones.</h2>
+              <div className="how-grid">
+                {howSteps.map((step) => (
+                  <article className="how-card" key={step.n}>
+                    <span className="how-n">{step.n}</span>
+                    <h3>{step.title}</h3>
+                    <p>{step.text}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+            </section>
+
+            <section id="benefits" aria-label="Benefits">
+            <section className="section">
+              <p className="section-kicker">Benefits at a glance</p>
+              <h2>All that crablearn.in can help you with.</h2>
+              <div className="focus-grid">
+                {benefits.map((card) => (
+                  <article className="focus-card" key={card.title}>
+                    <h3>{card.title}</h3>
+                    <p>{card.text}</p>
+                  </article>
+                ))}
+              </div>
+              <article className="program-card guarantee-card">
+                <h3>Money-back guaranteed</h3>
+                <p>Our money-back guarantee eliminates any risk of starting with Crab Learn. If you are not satisfied after the first tutorial, we will provide you with a full refund.</p>
+              </article>
+              <p className="section-kicker" style={{ marginTop: "0.6rem" }}>Featured In</p>
+              <div className="trust-ticker" aria-label="Featured in">
+                <div className="ticker-track">
+                  {[...featuredIn, ...featuredIn].map((item, index) => (
+                    <span className="ticker-item" key={`${item}-${index}`}>{item}</span>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="section faq-section">
+              <p className="section-kicker">Frequently Asked Questions</p>
+              <h2>Questions families ask before booking.</h2>
+              <div className="faq-list">
+                {faqs.map((item) => (
+                  <details className="faq-item" key={item.q}>
+                    <summary>{item.q}</summary>
+                    <p>{item.a}</p>
+                  </details>
+                ))}
+              </div>
+            </section>
+            </section>
+
+        <section className="section contact-section" id="contact">
+          <div>
+            <p className="section-kicker">Book an Educator</p>
+            <h2>Tell us the class, board, and whether you prefer home tuition or live online.</h2>
+            <p className="section-text">Crab Learn revolutionizes the way students access education by bringing qualified educators directly to their homes with just one click.</p>
+            <p className="callback-message">{callbackMessage}</p>
+          </div>
+
+          <form className="callback-form" onSubmit={handleCallbackSubmit}>
+            <label htmlFor="parentName">Parent name</label>
+            <input id="parentName" name="parentName" type="text" placeholder="Priya Sharma" required />
+            <label htmlFor="parentPhone">Phone number</label>
+            <input id="parentPhone" name="parentPhone" type="tel" placeholder="Enter phone number" required />
+            <label htmlFor="program">Program</label>
+            <select id="program" name="program" defaultValue="Home Tuition 1-on-1">
+              <option>Home Tuition 1-on-1</option>
+              <option>Live online 1-on-1</option>
+              <option>Classes LKG–3</option>
+              <option>Classes 4–12</option>
+              <option>IIT-JEE</option>
+              <option>NEET</option>
+              <option>Government exams</option>
+              <option>UPSC</option>
+              <option>Defence exams</option>
+              <option>Become educator</option>
+            </select>
+            <label htmlFor="message">Message</label>
+            <textarea id="message" name="message" rows="4" placeholder="Tell us about your child, grade level, and goals." />
+            <button className="button solid" type="submit">Book a callback</button>
+          </form>
+        </section>
+          <footer className="site-footer">
+            <div>
+              <strong>crablearn.in</strong>
+              <p>© Copyright crablearn.in 2026. All Rights Reserved.</p>
+            </div>
+            <div>
+              <button type="button" onClick={goToBookEducator}>Book educator</button>
+              <button type="button" onClick={goToEducatorJoin}>Become educator</button>
+              <span>Privacy Policy</span>
+              <span>Terms of Use</span>
+            </div>
+          </footer>
+        </div>
+      ) : null}
+
+      {showEducatorJoin ? (
+        <div className="home-deck educator-page">
+          <section className="book-hero">
+            <div className="promo-visual" aria-hidden="true">
+              <div className="promo-blob">
+                <span className="promo-chip">Teach</span>
+                <span className="promo-chip">Home</span>
+                <span className="promo-chip">Online</span>
+                <span className="promo-chip">Earn</span>
+              </div>
+            </div>
+            <div className="promo-copy promo-copy--center">
+              <h1>Become an Educator</h1>
+              <p className="promo-kicker">Share knowledge with students at home or live 1-on-1.</p>
+              <p className="promo-link">Join Crab Learn</p>
+              <button className="button coral" type="button" onClick={() => goToEducatorAuth("register")}>Become Educator</button>
+            </div>
+          </section>
+
+          <section className="section educator-steps">
+            <h2>Follow These Simple Steps</h2>
+            <div className="step-grid">
+              {educatorSteps.map((step) => (
+                <article className="step-card" key={step.n}>
+                  <span className="step-icon" aria-hidden="true">{step.icon}</span>
+                  <h3>{step.title}</h3>
+                  <p>{step.text}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="section educator-why">
+            <h2>Why Choose Crab Learn?</h2>
+            <p className="section-text educator-why-intro">
+              At Crab Learn, we’re committed to empowering educators by providing unparalleled flexibility and tools to grow their teaching career.
+            </p>
+            <div className="why-carousel">
+              <button className="why-arrow why-arrow--prev" type="button" onClick={() => shiftEducatorWhy(-1)} aria-label="Previous">‹</button>
+              <div className="why-viewport" ref={whyViewportRef}>
+                {educatorWhyCards.map((card) => (
+                  <article className="why-card" key={card.title}>
+                    <span className="why-icon" aria-hidden="true">{card.icon}</span>
+                    <h3>{card.title}</h3>
+                    <p>{card.text}</p>
+                  </article>
+                ))}
+              </div>
+              <button className="why-arrow why-arrow--next" type="button" onClick={() => shiftEducatorWhy(1)} aria-label="Next">›</button>
+            </div>
+          </section>
+
+          <section className="section">
+            <p className="section-kicker">How Crab Learn Works for Tutors</p>
+            <h2>Home tutoring jobs with flexible opportunities</h2>
+            <p className="section-text">
+              Crab Learn is a leading platform that connects home tutors with students and parents across cities. We provide home tutoring jobs with flexible job opportunities tailored to their expertise and preferences. Our platform empowers educators to shape their careers while making a meaningful impact on students' learning journeys. Join Crab Learn to discover rewarding teaching jobs and unlock your full potential as an academic instructor.
+            </p>
+          </section>
+
+          <section className="section">
+            <p className="section-kicker">Benefits of Becoming a Crab Learn Tutor</p>
+            <h2>Join a community of experienced and professional tutors</h2>
+            <ul className="work-list">
+              {educatorJobBenefits.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <p className="section-kicker" style={{ marginTop: "1.4rem" }}>crablearn.in</p>
+            <h2>Download the tutors app now</h2>
+            <div className="store-row">
+              <span className="store-badge">GET IT ON Google Play</span>
+              <span className="store-badge">GET IT ON App Store</span>
+            </div>
+            <button className="button coral" type="button" onClick={() => goToEducatorAuth("register")}>Start Now</button>
+          </section>
+        </div>
+      ) : null}
+
+      {showEducatorAuth ? (
+        <div className="home-deck educator-auth-page">
+          <section className="edu-auth-shell">
+            <div className="edu-auth-info">
+              <h1>Join Crab Learn</h1>
+              <p>Empower students with your expertise.</p>
+              <ul>
+                {educatorAuthPoints.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="edu-auth-form">
+              {authMode === "login" ? (
+                <>
+                  <h2>Log in as an Educator</h2>
+                  <button
+                    className="edu-google-btn"
+                    type="button"
+                    onClick={() => setLoginMessage("Use your username, email, or mobile number with password to continue.")}
+                  >
+                    Continue with Google
+                  </button>
+                  <p className="edu-or">or</p>
+                  <form className="edu-underline-form" onSubmit={handleLoginSubmit}>
+                    <label htmlFor="educatorAuthId">Username<span>*</span></label>
+                    <input
+                      id="educatorAuthId"
+                      name="phone"
+                      type="text"
+                      value={loginIdentifier}
+                      onChange={(event) => setLoginIdentifier(event.target.value)}
+                      placeholder="Your email, registration number, or mobile number"
+                      required
+                    />
+                    <label htmlFor="educatorAuthPassword">Password<span>*</span></label>
+                    <div className="edu-password-row">
+                      <input
+                        id="educatorAuthPassword"
+                        name="password"
+                        type={showAuthPassword ? "text" : "password"}
+                        placeholder="Your password"
+                        required
+                      />
+                      <button className="edu-eye" type="button" onClick={() => setShowAuthPassword((open) => !open)} aria-label="Show password">
+                        {showAuthPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                    <label className="edu-remember">
+                      <input type="checkbox" name="rememberMe" />
+                      Remember me
+                    </label>
+                    <button className="button coral student-login-btn" type="submit">Log in</button>
+                  </form>
+                  <p className="edu-legal">By clicking Continue or Sign up, you agree to Crab Learn Terms of Use and Privacy Policy.</p>
+                  <button className="edu-link" type="button" onClick={() => setLoginMessage("Use Contact on the homepage if you need help resetting access.")}>Forgot Password?</button>
+                  <p className="student-switch">Don't have an account? <button type="button" onClick={() => setAuthMode("register")}>Sign up</button></p>
+                </>
+              ) : (
+                <>
+                  <h2>Sign up as an Educator</h2>
+                  <button
+                    className="edu-google-btn"
+                    type="button"
+                    onClick={() => setLoginMessage("Use the form below to create your educator account.")}
+                  >
+                    Continue with Google
+                  </button>
+                  <p className="edu-or">or</p>
+                  <form className="edu-underline-form" onSubmit={handleRegisterSubmit}>
+                    <label htmlFor="educatorAuthName">Full name<span>*</span></label>
+                    <input id="educatorAuthName" name="fullName" type="text" placeholder="Your full name" required />
+                    <label htmlFor="educatorAuthRegId">Username<span>*</span></label>
+                    <input id="educatorAuthRegId" name="phone" type="text" placeholder="Your email, registration number, or mobile number" required />
+                    <label htmlFor="educatorAuthRegPassword">Password<span>*</span></label>
+                    <div className="edu-password-row">
+                      <input
+                        id="educatorAuthRegPassword"
+                        name="password"
+                        type={showAuthPassword ? "text" : "password"}
+                        placeholder="Create a password"
+                        required
+                      />
+                      <button className="edu-eye" type="button" onClick={() => setShowAuthPassword((open) => !open)} aria-label="Show password">
+                        {showAuthPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                    <button className="button coral student-login-btn" type="submit">Sign up</button>
+                  </form>
+                  <p className="edu-legal">By clicking Continue or Sign up, you agree to Crab Learn Terms of Use and Privacy Policy.</p>
+                  <p className="student-switch">Already have an account? <button type="button" onClick={() => setAuthMode("login")}>Log in</button></p>
+                </>
+              )}
+              {loginMessage ? <p className="student-join-note">{loginMessage}</p> : null}
+              {authMessage ? <p className="student-join-note">{authMessage}</p> : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {showQuizPage ? (
+        <div className="home-deck quiz-page">
+          <section className="book-hero">
+            <div className="promo-visual" aria-hidden="true">
+              <div className="promo-blob">
+                <span className="promo-chip">CBSE</span>
+                <span className="promo-chip">Quiz</span>
+                <span className="promo-chip">Fun</span>
+                <span className="promo-chip">Boards</span>
+              </div>
+            </div>
+            <div className="promo-copy promo-copy--center">
+              <h1>Ready to Test Your Brain?</h1>
+              <p className="promo-kicker">Master Every CBSE Subject with Fun Quizzes!</p>
+              <p className="promo-link">Start Your Quiz Now</p>
+              <button className="button coral" type="button" onClick={goToStudentJoin}>Start Quiz</button>
+            </div>
+          </section>
+          <section className="section">
+            <p className="section-kicker">Crab Learn Online Quiz</p>
+            <h2>Ace the Quiz: Test Your Knowledge Online!</h2>
+            <ul className="work-list">
+              {quizPoints.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <p className="section-kicker" style={{ marginTop: "1.2rem" }}>Practice Quiz</p>
+            <div className="resource-grid">
+              {cbseClasses.map((item) => (
+                <span className="resource-item" key={`quiz-page-${item}`}>{item.replace("CBSE Class - ", "CBSE Class-")} Quiz</span>
+              ))}
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {showBookEducator ? (
+        <div className="home-deck book-page">
+          <section className="book-hero">
+            <div className="promo-visual" aria-hidden="true">
+              <div className="promo-blob">
+                <span className="promo-chip">1:1</span>
+                <span className="promo-chip">CBSE</span>
+                <span className="promo-chip">ICSE</span>
+                <span className="promo-chip">Boards</span>
+              </div>
+            </div>
+            <div className="promo-copy promo-copy--center">
+              <h1>Educators on Call</h1>
+              <p className="promo-kicker">Are you looking for an educator? Find educators on demand.</p>
+              <p className="promo-link">Book Your Educator Now</p>
+              <a className="button coral" href="#book-form">Book Educator</a>
+            </div>
+          </section>
+          <section className="section contact-section" id="book-form">
+            <div>
+              <p className="section-kicker">Book an Educator</p>
+              <h2>Find your perfect tutor today.</h2>
+              <p className="section-text">Expert guidance tailored to your learning needs — verified educators, 1-on-1 sessions, and a money-back guarantee after the first tutorial.</p>
+              <p className="callback-message">{callbackMessage}</p>
+            </div>
+            <form className="callback-form" onSubmit={handleCallbackSubmit}>
+              <label htmlFor="bookParentName">Parent name</label>
+              <input id="bookParentName" name="parentName" type="text" placeholder="Priya Sharma" required />
+              <label htmlFor="bookParentPhone">Phone number</label>
+              <input id="bookParentPhone" name="parentPhone" type="tel" placeholder="Enter phone number" required />
+              <label htmlFor="bookProgram">Program</label>
+              <select id="bookProgram" name="program" defaultValue="Home Tuition 1-on-1">
+                <option>Home Tuition 1-on-1</option>
+                <option>Live online 1-on-1</option>
+                <option>Classes LKG–3</option>
+                <option>Classes 4–12</option>
+                <option>IIT-JEE</option>
+                <option>NEET</option>
+                <option>Government exams</option>
+                <option>UPSC</option>
+                <option>Defence exams</option>
+              </select>
+              <label htmlFor="bookMessage">Message</label>
+              <textarea id="bookMessage" name="message" rows="4" placeholder="Tell us about your child, grade level, and goals." />
+              <button className="button solid" type="submit">Book a callback</button>
+            </form>
+          </section>
+        </div>
+      ) : null}
+
+      {showStudentJoin ? (
+        <div className="home-deck educator-auth-page student-page">
+          <section className="edu-auth-shell">
+            <div className="edu-auth-info">
+              <h1>Join Crab Learn</h1>
+              <p>You are one step away from a world-class 1-on-1 learning experience.</p>
+              <ul>
+                {studentJoinPoints.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="edu-auth-form">
+              {authMode === "login" ? (
+                <>
+                  <h2>Log in as a Student</h2>
+                  <button
+                    className="edu-google-btn"
+                    type="button"
+                    onClick={() => setLoginMessage("Use your username, email, or mobile number with password to continue.")}
+                  >
+                    Continue with Google
+                  </button>
+                  <p className="edu-or">or</p>
+                  <form className="edu-underline-form" onSubmit={handleLoginSubmit}>
+                    <label htmlFor="studentAuthId">Username<span>*</span></label>
+                    <input
+                      id="studentAuthId"
+                      name="phone"
+                      type="text"
+                      value={loginIdentifier}
+                      onChange={(event) => setLoginIdentifier(event.target.value)}
+                      placeholder="Your email, registration number, or mobile number"
+                      required
+                    />
+                    <label htmlFor="studentAuthPassword">Password<span>*</span></label>
+                    <div className="edu-password-row">
+                      <input
+                        id="studentAuthPassword"
+                        name="password"
+                        type={showAuthPassword ? "text" : "password"}
+                        placeholder="Your password"
+                        required
+                      />
+                      <button className="edu-eye" type="button" onClick={() => setShowAuthPassword((open) => !open)} aria-label="Show password">
+                        {showAuthPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                    <label className="edu-remember">
+                      <input type="checkbox" name="rememberMe" />
+                      Remember me
+                    </label>
+                    <button className="button coral student-login-btn" type="submit">Log in</button>
+                  </form>
+                  <p className="edu-legal">By clicking Continue or Sign up, you agree to Crab Learn Terms of Use and Privacy Policy.</p>
+                  <button className="edu-link" type="button" onClick={() => setLoginMessage("Use Contact on the homepage if you need help resetting access.")}>Forgot Password?</button>
+                  <p className="student-switch">Don't have an account? <button type="button" onClick={() => setAuthMode("register")}>Sign up</button></p>
+                </>
+              ) : (
+                <>
+                  <h2>Sign up as a Student</h2>
+                  <button
+                    className="edu-google-btn"
+                    type="button"
+                    onClick={() => setLoginMessage("Use the form below to create your student account.")}
+                  >
+                    Continue with Google
+                  </button>
+                  <p className="edu-or">or</p>
+                  <form className="edu-underline-form" onSubmit={handleRegisterSubmit}>
+                    <label htmlFor="studentAuthName">Full name<span>*</span></label>
+                    <input id="studentAuthName" name="fullName" type="text" placeholder="Your full name" required />
+                    <label htmlFor="studentAuthRegId">Username<span>*</span></label>
+                    <input id="studentAuthRegId" name="phone" type="text" placeholder="Your email, registration number, or mobile number" required />
+                    <label htmlFor="studentAuthRegPassword">Password<span>*</span></label>
+                    <div className="edu-password-row">
+                      <input
+                        id="studentAuthRegPassword"
+                        name="password"
+                        type={showAuthPassword ? "text" : "password"}
+                        placeholder="Create a password"
+                        required
+                      />
+                      <button className="edu-eye" type="button" onClick={() => setShowAuthPassword((open) => !open)} aria-label="Show password">
+                        {showAuthPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                    <button className="button coral student-login-btn" type="submit">Sign up</button>
+                  </form>
+                  <p className="edu-legal">By clicking Continue or Sign up, you agree to Crab Learn Terms of Use and Privacy Policy.</p>
+                  <p className="student-switch">Already have an account? <button type="button" onClick={() => setAuthMode("login")}>Log in</button></p>
+                </>
+              )}
+              {loginMessage ? <p className="student-join-note">{loginMessage}</p> : null}
+              {authMessage ? <p className="student-join-note">{authMessage}</p> : null}
+            </div>
+          </section>
+
+          <section className="section student-tutors">
+            <h2>Find Expert Tutors for Academic Excellence</h2>
+            <p className="section-text">
+              Crab Learn helps students improve grades and find tutors for Maths, Science, Coding, boards, and competitive exams through personalized 1-on-1 sessions.
+            </p>
+            <h3>Experienced Tutors for Personalized Learning</h3>
+            <p className="section-text">Find the right tutor in minutes and start learning at your pace.</p>
+            <div className="student-tutor-grid">
+              {studentTutorCards.map((card) => (
+                <article className="student-tutor-card" key={card.title}>
+                  <span className="student-icon" aria-hidden="true">{card.icon}</span>
+                  <h3>{card.title}</h3>
+                  <p>{card.text}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="section student-advantage">
+            <h2>The One-To-One Advantage</h2>
+            <p className="section-text">Join hand-picked tutors for focused, student-centric learning.</p>
+            <div className="advantage-grid">
+              {studentAdvantages.map((item) => (
+                <article className="advantage-chip" key={item.title}>
+                  <span className="student-icon" aria-hidden="true">{item.icon}</span>
+                  <h3>{item.title}</h3>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
         ) : null}
 
+      <main>
+        {showPrivilegedWorkspaceTabs ? (
+          <div className="workspace-switcher" role="navigation" aria-label="Supervisor workspaces">
+            <button className={`portal-tab${activePortalRole === "student" && portalScreen !== "admin-dashboard" ? " active" : ""}`} type="button" onClick={() => openWorkspace("student")}>Student</button>
+            <button className={`portal-tab${activePortalRole === "teacher" && portalScreen !== "admin-dashboard" ? " active" : ""}`} type="button" onClick={() => openWorkspace("teacher")}>Educator</button>
+            <button className={`portal-tab${isAccountsPortal ? " active" : ""}`} type="button" onClick={() => openWorkspace("accounts")}>Accounts</button>
+            <button className={`portal-tab${portalScreen === "admin-dashboard" ? " active" : ""}`} type="button" onClick={() => openWorkspace("admin")}>Admin</button>
+          </div>
+        ) : null}
         {showPortalPreviewSection ? (
-        <section className={`section portal-section${isStudentLoginView ? " student-portal-section" : ""}${isStudentWorkspaceView ? " student-workspace-section" : ""}`} id="about">
+        <section className={`section portal-section${isStudentLoginView ? " student-portal-section" : ""}${isStudentWorkspaceView ? " student-workspace-section" : ""}`} id="portal">
           <div className={`section-heading-row${isStudentWorkspaceView ? " student-workspace-heading-row" : ""}`}>
             <div>
               <p className="section-kicker">{portalPreviewLabel}</p>
@@ -860,7 +2222,7 @@ function App() {
             </div>
             <div className="portal-tabs">
               {!currentUser && !isAccountsPortal ? (
-                <button className={`portal-tab${portalScreen === "login" ? " active" : ""}`} type="button" onClick={() => setPortalScreen("login")}>Login</button>
+              <button className={`portal-tab${portalScreen === "login" ? " active" : ""}`} type="button" onClick={() => setPortalScreen("login")}>Login</button>
               ) : null}
               {isAccountsPortal && currentUser && canAccessAccountsPage ? (
                 <button className={`portal-tab${portalScreen === "accounts-dashboard" ? " active" : ""}`} type="button" onClick={() => setPortalScreen("accounts-dashboard")}>Accounts</button>
@@ -878,7 +2240,16 @@ function App() {
             <div className={`portal-phone${isStudentLoginView ? " student-login-phone" : ""}${isStudentWorkspaceView ? " student-workspace-phone" : ""}`}>
               <div className="phone-browser">{isAccountsPortal ? "crablearn.app/accounts" : "crablearn.app"}</div>
 
-              {portalScreen === "login" ? (
+              {accountsAccessDenied ? (
+                <section className="mobile-screen">
+                  <article className="mobile-card">
+                    <h3>Accounts access denied</h3>
+                    <p>Student and educator accounts cannot open the accounts workspace. Sign in as supervisor to review fees, payouts, and reports.</p>
+                  </article>
+                </section>
+              ) : null}
+
+              {portalScreen === "login" && !accountsAccessDenied ? (
                 <section className="mobile-screen">
                   <div className="portal-brand-row">
                     <div className="portal-logo">CL</div>
@@ -888,11 +2259,11 @@ function App() {
                     </div>
                   </div>
                   {!isAccountsPortal ? (
-                    <div className="login-card login-summary-card" data-testid="auth-login-card">
+                  <div className="login-card login-summary-card" data-testid="auth-login-card">
                       <div className="badge success">{`Secure ${activeSignInProfile.badgeText} access`}</div>
-                      <h3 data-testid="auth-login-title">{activeSignInProfile.welcomeTitle}</h3>
-                      <p>{loginMessage}</p>
-                    </div>
+                    <h3 data-testid="auth-login-title">{activeSignInProfile.welcomeTitle}</h3>
+                    <p>{loginMessage}</p>
+                  </div>
                   ) : (
                     <div className="login-card login-summary-card" data-testid="auth-login-card">
                       <h3 data-testid="auth-login-title">{activeSignInProfile.welcomeTitle}</h3>
@@ -985,7 +2356,7 @@ function App() {
                     <span>Menu</span>
                     <div>
                       <strong>{`Hi, ${learnerName.toUpperCase()}`}</strong>
-                      <small>{isAdmin ? "Admin portal" : "Student portal"}</small>
+                      <small>{activePortalRole === "teacher" ? "Educator portal" : isAdmin ? "Supervisor portal" : "Student portal"}</small>
                     </div>
                   </div>
                   <div className="student-workspace-hero">
@@ -1004,6 +2375,36 @@ function App() {
                       </div>
                     </div>
                   </div>
+                  <article className="mobile-card class-card">
+                    <div className="card-header-line">
+                      <span className="badge success">{activePortalRole === "teacher" ? "Assigned students" : "Assigned educator"}</span>
+                    </div>
+                    {activePortalRole === "teacher" ? (
+                      assignedLearners.length === 0 ? (
+                        <p>No students are mapped to this educator yet. Supervisor can create the mapping from Admin.</p>
+                      ) : (
+                        <ul className="roster-list">
+                          {assignedLearners.map((person) => (
+                            <li key={person.id}>
+                              <strong>{person.full_name}</strong>
+                              <span>{person.phone}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )
+                    ) : assignedEducators.length === 0 ? (
+                      <p>No educator is mapped to this student yet. Supervisor can create the mapping from Admin.</p>
+                    ) : (
+                      <ul className="roster-list">
+                        {assignedEducators.map((person) => (
+                          <li key={person.id}>
+                            <strong>{person.full_name}</strong>
+                            <span>{person.phone}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </article>
                   <article className="mobile-card class-card">
                     <div className="card-header-line">
                       <span className="badge success">Live Class</span>
@@ -1046,15 +2447,37 @@ function App() {
                     </div>
                   </div>
                   <div className="live-stack">
-                    {liveClasses.map((item) => (
-                      <article className="mobile-card live-card" key={item.title}>
-                        <h3>{item.title}</h3>
-                        <p className="live-type">{item.type}</p>
-                        <p>{item.platform}</p>
-                        <p>{item.updated}</p>
-                        <button className="button portal-button green" type="button">Open Class</button>
+                    {activePortalRole === "teacher" ? (
+                      assignedLearners.length === 0 ? (
+                        <article className="mobile-card live-card">
+                          <h3>No assigned students</h3>
+                          <p>Live classes appear here after a supervisor maps students to this educator.</p>
+                        </article>
+                      ) : (
+                        assignedLearners.map((person) => (
+                          <article className="mobile-card live-card" key={person.id}>
+                            <h3>{person.full_name}</h3>
+                            <p className="live-type">Assigned student</p>
+                            <p>{person.phone}</p>
+                            <button className="button portal-button green" type="button">Open Class</button>
+                          </article>
+                        ))
+                      )
+                    ) : assignedEducators.length === 0 ? (
+                      <article className="mobile-card live-card">
+                        <h3>No assigned educator</h3>
+                        <p>Live classes appear here after a supervisor maps an educator to this student.</p>
                       </article>
-                    ))}
+                    ) : (
+                      assignedEducators.map((person) => (
+                        <article className="mobile-card live-card" key={person.id}>
+                          <h3>{person.full_name}</h3>
+                          <p className="live-type">Assigned educator</p>
+                          <p>{person.phone}</p>
+                          <button className="button portal-button green" type="button">Open Class</button>
+                        </article>
+                      ))
+                    )}
                   </div>
                   <div className="bottom-nav">
                     <button className="bottom-link" type="button" onClick={() => setPortalScreen("dashboard")}>Home</button>
@@ -1178,6 +2601,42 @@ function App() {
                   </article>
 
                   <article className="mobile-card admin-card">
+                    <h4 className="admin-heading">Map Student with Educator</h4>
+                    <p>{assignmentMessage}</p>
+                    <form className="mobile-form" onSubmit={handleMapAssignment}>
+                      <label htmlFor="mapStudentId">Student</label>
+                      <select id="mapStudentId" value={mapStudentId} onChange={(event) => setMapStudentId(event.target.value)} required>
+                        <option value="">Select student</option>
+                        {directoryStudents.map((user) => (
+                          <option key={user.id} value={user.id}>{`${user.full_name} (${user.phone})`}</option>
+                        ))}
+                      </select>
+                      <label htmlFor="mapTeacherId">Educator</label>
+                      <select id="mapTeacherId" value={mapTeacherId} onChange={(event) => setMapTeacherId(event.target.value)} required>
+                        <option value="">Select educator</option>
+                        {directoryTeachers.map((user) => (
+                          <option key={user.id} value={user.id}>{`${user.full_name} (${user.phone})`}</option>
+                        ))}
+                      </select>
+                      <button className="button portal-button blue" type="submit">Save mapping</button>
+                    </form>
+                    {mappedRoster.length === 0 ? (
+                      <p>No mappings yet. Load users first if the lists above are empty.</p>
+                    ) : (
+                      <div>
+                        {mappedRoster.map((item) => (
+                          <div className="admin-user-row" key={item.id}>
+                            <strong>{item.student?.full_name} → {item.teacher?.full_name}</strong>
+                            <p>{`Student: ${item.student?.phone || "-"}`}</p>
+                            <p>{`Educator: ${item.teacher?.phone || "-"}`}</p>
+                            <button className="button portal-button red" type="button" onClick={() => handleRemoveAssignment(item.id)}>Remove</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </article>
+
+                  <article className="mobile-card admin-card">
                     <h4 className="admin-heading">Create New User</h4>
                     <form className="mobile-form" onSubmit={handleAdminCreateUser}>
                       <label htmlFor="adminCreateName">Full Name</label>
@@ -1189,6 +2648,7 @@ function App() {
                       <label htmlFor="adminCreateRole">Role</label>
                       <select id="adminCreateRole" name="role" defaultValue="student">
                         <option value="student">student</option>
+                        <option value="teacher">educator</option>
                         <option value="admin">admin</option>
                         <option value="supervisor">supervisor</option>
                       </select>
@@ -1333,8 +2793,8 @@ function App() {
                     <p className="section-kicker">Eligible roles</p>
                     <ul className="check-list">
                       <li>Dedicated accounts users can open monthly financial reports</li>
-                      <li>Admin and supervisor users can review the same accounts workspace</li>
-                      <li>Student, teacher, and engineer roles cannot view accounts data</li>
+                      <li>Supervisor can open Student, Educator, and Accounts from one sign-in</li>
+                      <li>Student and educator accounts cannot view accounts data</li>
                       <li>Workbook imports and report checks stay inside this protected route</li>
                     </ul>
                   </div>
@@ -1377,54 +2837,7 @@ function App() {
         ) : null}
 
         {showAccountsDashboard ? <AccountsPage apiBaseUrl={apiBaseUrl} currentUser={currentUser} /> : null}
-
-        {showContactSection ? (
-        <section className="section contact-section" id="contact">
-          <div>
-            <p className="section-kicker">Additional features</p>
-            <h2>Contact flow, WhatsApp-ready lead capture, and advisor callbacks.</h2>
-            <p className="section-text">Built to match the reference requirements with a simple front-end simulation for callback capture, student login, and portal switching.</p>
-            <p className="callback-message">{callbackMessage}</p>
-          </div>
-
-          <form className="callback-form" onSubmit={handleCallbackSubmit}>
-            <label htmlFor="parentName">Parent name</label>
-            <input id="parentName" name="parentName" type="text" placeholder="Priya Sharma" required />
-            <label htmlFor="parentPhone">Phone number</label>
-            <input id="parentPhone" name="parentPhone" type="tel" placeholder="Enter phone number" required />
-            <label htmlFor="program">Program</label>
-            <select id="program" name="program" defaultValue="Summer Program 2026">
-              <option>Summer Program 2026</option>
-              <option>Elementary</option>
-              <option>High School / Middle School</option>
-              <option>Test Prep</option>
-            </select>
-            <label htmlFor="message">Message</label>
-            <textarea id="message" name="message" rows="4" placeholder="Tell us about your child, grade level, and goals." />
-            <button className="button solid" type="submit">Request Callback</button>
-          </form>
-        </section>
-        ) : null}
       </main>
-
-      {previewOpen ? (
-        <div className="video-modal" role="dialog" aria-modal="true" aria-label="Class preview video" onClick={() => setPreviewOpen(false)}>
-          <div className="video-modal-card" onClick={(event) => event.stopPropagation()}>
-            <button className="video-modal-close" type="button" onClick={() => setPreviewOpen(false)} aria-label="Close preview">
-              Close
-            </button>
-            <iframe
-              className="video-embed"
-              src={previewVideoUrl}
-              title="Class preview"
-              loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-            />
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
