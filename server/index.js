@@ -22,6 +22,8 @@ import {
   createMeeting,
   createStudent,
   cancelMeeting,
+  markSessionStartedByRoom,
+  settleClassStatuses,
   deleteAssignment,
   ensurePrivilegedAccounts,
   getAssignmentsForUser,
@@ -520,6 +522,7 @@ app.post("/api/junnu/join", (req, res) => {
     return;
   }
   try {
+    markSessionStartedByRoom(req.body?.roomId);
     const payload = junnuJoin({
       roomId: req.body?.roomId,
       peerId: req.body?.peerId,
@@ -529,6 +532,16 @@ app.post("/api/junnu/join", (req, res) => {
   } catch (_error) {
     return res.status(400).json({ ok: false, message: "Could not join Junnu." });
   }
+});
+
+app.post("/api/classes/start", (req, res) => {
+  const actor = requireJunnuActor(req, res);
+  if (!actor) {
+    return;
+  }
+  markSessionStartedByRoom(req.body?.roomId);
+  settleClassStatuses();
+  return res.json({ ok: true, classes: getClassesForUser(actor) });
 });
 
 app.post("/api/junnu/signal", (req, res) => {

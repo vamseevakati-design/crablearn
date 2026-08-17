@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import AccountsPage from "./AccountsPage";
+import ErrorBoundary from "./ErrorBoundary";
 import JunnuRoom from "./JunnuRoom";
 
 const subjectGroups = [
@@ -549,16 +550,18 @@ function classJoinState(session, now = Date.now(), role = "") {
   if (status === "cancelled") {
     return { key: "cancelled", label: "Cancelled", canJoin: false };
   }
-  if (status === "done") {
-    return { key: "ended", label: "Ended", canJoin: false };
-  }
   const start = new Date(session?.starts_at).getTime();
   const durationMin = Math.max(15, Number(session?.duration_min) || 45);
+  const endAt = Number.isFinite(start) ? start + durationMin * 60 * 1000 : null;
+  const started = Boolean(session?.started_at) || status === "live" || status === "done";
+  const windowOver = endAt !== null && now > endAt;
+  if (status === "done" || (started && windowOver)) {
+    return { key: "ended", label: "Completed", canJoin: false };
+  }
   if (!Number.isFinite(start)) {
     return { key: "live", label: "Join", canJoin: true };
   }
   const openAt = start - 15 * 60 * 1000;
-  const endAt = start + durationMin * 60 * 1000;
   if (now < openAt) {
     return { key: "upcoming", label: "Upcoming", canJoin: canHost, joinLabel: "Start early" };
   }
@@ -576,7 +579,15 @@ function SessionJoinControls({ session, onJoin, joinLabel = "Join", role = "", n
     <span className="session-join-row">
       <span className={`session-state session-state--${state.key}`}>{state.key === "live" ? "Live" : state.label}</span>
       {state.canJoin ? (
-        <button className="button portal-button green" type="button" onClick={() => onJoin(session)}>
+        <button
+          className="button portal-button green"
+          type="button"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onJoin(session);
+          }}
+        >
           {state.joinLabel || joinLabel}
         </button>
       ) : null}
@@ -806,6 +817,14 @@ function App() {
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (portalScreen !== "meet" || !activeMeeting) {
+      return;
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.querySelector(".meet-room")?.scrollIntoView({ block: "start" });
+  }, [portalScreen, activeMeeting]);
+
   function goToHeroPage(index) {
     const next = ((index % heroPages.length) + heroPages.length) % heroPages.length;
     setHomeSlide(next);
@@ -863,20 +882,41 @@ function App() {
   }
 
   function joinScheduledClass(session) {
-    const state = classJoinState(session, Date.now(), currentUserRole);
-    if (!state.canJoin) {
+    if (!session) {
       return;
     }
-    setActiveMeeting({
+    const status = String(session.status || "scheduled").toLowerCase();
+    if (status === "cancelled" || status === "done") {
+      return;
+    }
+    const startedSession = {
       ...session,
-      platform: MEET_PRODUCT
-    });
+      platform: MEET_PRODUCT,
+      started_at: session.started_at || new Date().toISOString(),
+      status: status === "done" ? "done" : "live"
+    };
+    setActiveMeeting(startedSession);
     setPortalScreen("meet");
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    const identifier = currentUser?.phone || currentUser?.full_name || "";
+    const password = sessionPasswordRef.current;
+    fetch(`${apiBaseUrl}/api/classes/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        identifier,
+        password,
+        roomId: junnuRoomId(session)
+      })
+    }).catch(() => {});
   }
 
-  function leaveMeeting() {
+  async function leaveMeeting() {
     setActiveMeeting(null);
     setPortalScreen("dashboard");
+    if (currentUser && sessionPasswordRef.current) {
+      loadMyClasses(currentUser.phone || currentUser.full_name, sessionPasswordRef.current);
+    }
   }
 
   function sessionPeopleLabel(session) {
@@ -2528,28 +2568,30 @@ function App() {
         ) : null}
 
       <main>
-        {portalScreen === "meet" && activeMeeting ? (
-          <section className="meet-room">
+        {activeMeeting ? (
+          <section className="meet-room meet-room--overlay">
             <div className="meet-room-bar">
               <div>
                 <p className="section-kicker">Junnu</p>
-                <h3>{activeMeeting.subject}</h3>
+                <h3>{activeMeeting.subject || "Class"}</h3>
                 <p>{sessionPeopleLabel(activeMeeting)}</p>
                 <p className="meet-noise-flag">Junnu HD · shared whiteboard</p>
               </div>
               <button className="button portal-button red" type="button" onClick={leaveMeeting}>Leave</button>
             </div>
-            <div className={`meet-focus${activeMeeting.kind === "m2m" ? " meet-focus--group" : ""}`}>
-              <JunnuRoom
-                apiBaseUrl={apiBaseUrl}
-                roomId={junnuRoomId(activeMeeting)}
-                displayName={learnerName}
-                identifier={currentUser?.phone || currentUser?.full_name || ""}
-                password={sessionPasswordRef.current}
-                title={activeMeeting.subject}
-              />
-            </div>
-            <p className="meet-hint">The whiteboard fills the class. Student and educator cameras stay as picture-in-picture so you can draw together.</p>
+            <ErrorBoundary onReset={leaveMeeting}>
+              <div className={`meet-focus${activeMeeting.kind === "m2m" ? " meet-focus--group" : ""}`}>
+                <JunnuRoom
+                  apiBaseUrl={apiBaseUrl}
+                  roomId={junnuRoomId(activeMeeting)}
+                  displayName={learnerName}
+                  identifier={currentUser?.phone || currentUser?.full_name || ""}
+                  password={sessionPasswordRef.current || ""}
+                  title={activeMeeting.subject}
+                />
+              </div>
+            </ErrorBoundary>
+            <p className="meet-hint">Video stays in a strip at the top. The whiteboard uses the rest of the screen.</p>
           </section>
         ) : (
           <>

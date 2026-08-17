@@ -206,7 +206,7 @@ async function applyCrystalSenders(pc) {
 export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier, password, title }) {
   const localVideoRef = useRef(null);
   const boardRef = useRef(null);
-  const peerIdRef = useRef(`p-${crypto.randomUUID()}`);
+  const peerIdRef = useRef(`p-${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`}`);
   const afterRef = useRef(0);
   const peersRef = useRef(new Map());
   const streamRef = useRef(null);
@@ -226,6 +226,13 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
   const [snapshots, setSnapshots] = useState([]);
   const [aiStatus, setAiStatus] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
+  const [boardMeta, setBoardMeta] = useState({
+    pageIndex: 0,
+    pageCount: 1,
+    canUndo: false,
+    canRedo: false,
+    background: "white"
+  });
 
   function syncMeta() {
     const board = boardStateRef.current;
@@ -506,29 +513,40 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
     }
 
     async function start() {
-      setStatus("Allow camera and mic for Junnu HD…");
-      let stream;
+      setStatus("Opening Junnu… allow camera and mic if the browser asks.");
+      let stream = null;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           audio: AUDIO_CONSTRAINTS,
           video: VIDEO_CONSTRAINTS
         });
-      } catch (_error) {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: AUDIO_CONSTRAINTS,
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, aspectRatio: 1.777 }
-        });
+      } catch (_hdError) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: AUDIO_CONSTRAINTS,
+            video: true
+          });
+        } catch (_basicError) {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS, video: false });
+            setStatus("Camera is blocked. Whiteboard is open with microphone only.");
+          } catch (_audioError) {
+            setStatus("Camera and mic were blocked. Whiteboard is still open.");
+          }
+        }
       }
-      stream.getVideoTracks().forEach((track) => {
-        track.contentHint = "detail";
-      });
       if (cancelled) {
-        stream.getTracks().forEach((track) => track.stop());
+        stream?.getTracks().forEach((track) => track.stop());
         return;
       }
-      streamRef.current = stream;
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
+      if (stream) {
+        stream.getVideoTracks().forEach((track) => {
+          track.contentHint = "detail";
+        });
+        streamRef.current = stream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
       }
       const joined = await post("/api/junnu/join", {
         identifier,
@@ -850,7 +868,22 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
   }
 
   return (
-    <div className="junnu-stage junnu-stage--board-focus">
+    <div className="junnu-stage">
+      <p className="junnu-status-banner">{status}</p>
+      <aside className="junnu-filmstrip" aria-label="Live cameras">
+        <figure className="junnu-pip-card junnu-pip-card--self">
+          <video ref={localVideoRef} autoPlay muted playsInline />
+          <figcaption>You · {displayName}</figcaption>
+        </figure>
+        {remoteTiles.length ? remoteTiles.map((tile) => (
+          <figure key={tile.peerId} className="junnu-pip-card">
+            <video id={`junnu-remote-${tile.peerId}`} autoPlay playsInline />
+            <figcaption>{tile.name}</figcaption>
+          </figure>
+        )) : (
+          <p className="junnu-pip-wait">Waiting for the other person…</p>
+        )}
+      </aside>
       <div className="junnu-board-pane">
         <div className="junnu-board-tools">
           <strong>Whiteboard</strong>
@@ -911,23 +944,9 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
               />
             </form>
           ) : null}
-          <aside className="junnu-pip" aria-label="Student and educator cameras">
-            {remoteTiles.length ? remoteTiles.map((tile) => (
-              <figure key={tile.peerId} className="junnu-pip-card">
-                <video id={`junnu-remote-${tile.peerId}`} autoPlay playsInline />
-                <figcaption>{tile.name}</figcaption>
-              </figure>
-            )) : (
-              <p className="junnu-pip-wait">{status}</p>
-            )}
-            <figure className="junnu-pip-card junnu-pip-card--self">
-              <video ref={localVideoRef} autoPlay muted playsInline />
-              <figcaption>You · {displayName}</figcaption>
-            </figure>
-          </aside>
         </div>
         <p className="junnu-board-hint">
-          Whiteboard is the class focus. Student and educator stay in picture-in-picture. Pen strokes are smoothed; Make clear turns messy mouse writing into typed text.
+          Faces stay in the video strip. The board below is for writing together.
           {aiStatus ? ` ${aiStatus}` : ""}
           {snapshots.length ? ` Saved: ${snapshots.length} snapshot${snapshots.length === 1 ? "" : "s"}.` : ""}
         </p>

@@ -2010,10 +2010,21 @@ h1 {
   font-size: 0.86rem;
 }
 
-.meet-room {
-  display: grid;
-  gap: 0.85rem;
-  padding: 0.4rem 0 1.2rem;
+.meet-room--overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: auto;
+  min-height: 100dvh;
+  padding: 1rem 1.1rem 1.5rem;
+  background: #f7f8fa;
+}
+
+.meet-fallback {
+  padding: 1.2rem;
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid var(--line);
 }
 
 .meet-room-bar {
@@ -2050,50 +2061,45 @@ h1 {
 .junnu-stage,
 .junnu-stage--board-focus {
   position: relative;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
   width: 100%;
   min-height: 72vh;
   color: #0f172a;
 }
 
-.junnu-board-pane {
-  display: flex;
-  flex-direction: column;
-  min-height: 72vh;
-  background: #fff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 1.15rem;
-  overflow: hidden;
-  box-shadow: var(--shadow-soft);
+.junnu-status-banner {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.7rem;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
-.junnu-board-wrap {
-  position: relative;
-  flex: 1;
-  min-height: 58vh;
-}
-
-.junnu-pip {
-  position: absolute;
-  right: 0.75rem;
-  bottom: 0.75rem;
-  z-index: 6;
+.junnu-filmstrip {
   display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  pointer-events: none;
+  flex-wrap: nowrap;
+  gap: 0.65rem;
+  align-items: stretch;
+  overflow-x: auto;
+  padding: 0.45rem;
+  border-radius: 1rem;
+  background: #0f172a;
 }
 
 .junnu-pip-card {
   margin: 0;
-  width: 11.75rem;
-  height: 6.6rem;
+  flex: 0 0 15.5rem;
+  width: 15.5rem;
+  height: 8.7rem;
   position: relative;
   overflow: hidden;
-  border-radius: 0.7rem;
+  border-radius: 0.75rem;
   background: #020617;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.35);
-  pointer-events: auto;
+  box-shadow: none;
 }
 
 .junnu-pip-card video {
@@ -2110,7 +2116,7 @@ h1 {
   bottom: 0;
   margin: 0;
   padding: 0.2rem 0.4rem;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 800;
   color: #fff;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
@@ -2121,14 +2127,36 @@ h1 {
 }
 
 .junnu-pip-wait {
-  width: 11.75rem;
+  flex: 1 1 auto;
+  min-width: 12rem;
   margin: 0;
-  padding: 0.55rem 0.6rem;
-  border-radius: 0.7rem;
-  background: rgba(15, 23, 42, 0.88);
+  display: grid;
+  place-items: center;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.75rem;
+  background: #1e293b;
   color: #e2e8f0;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   line-height: 1.35;
+}
+
+.junnu-board-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 52vh;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1.15rem;
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+}
+
+.junnu-board-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 52vh;
+  min-width: 0;
 }
 
 .junnu-board-tools {
@@ -2182,14 +2210,14 @@ h1 {
 .junnu-board-wrap {
   position: relative;
   flex: 1;
-  min-height: 58vh;
+  min-height: 52vh;
 }
 
 .junnu-board {
   flex: none;
   width: 100%;
   height: 100%;
-  min-height: 58vh;
+  min-height: 52vh;
   touch-action: none;
   cursor: crosshair;
   background: #fff;
@@ -2242,10 +2270,10 @@ h1 {
 }
 
 @media (max-width: 900px) {
-  .junnu-pip-card,
-  .junnu-pip-wait {
-    width: 9.2rem;
-    height: 5.2rem;
+  .junnu-pip-card {
+    flex-basis: 11.5rem;
+    width: 11.5rem;
+    height: 6.5rem;
   }
 }
 
@@ -3448,7 +3476,6 @@ select.enroll-input,
 input.enroll-input {
   background: #fff;
   border-color: var(--line);
-}
 }
 
 .accounts-tab,

@@ -415,6 +415,8 @@ function hydrateScheduledClass(row) {
     duration_min: Number(row.duration_min || 45),
     join_url: placeholderCall ? meetingRoomUrl(`Class${row.id}`, "o2o") : rewriteAnonymousMeetUrl(rawUrl),
     status: row.status || "scheduled",
+    started_at: row.started_at || null,
+    completed_at: row.completed_at || null,
     kind: "o2o",
     mode_label: "1 to 1",
     month_key: String(startsAt || "").slice(0, 7)
@@ -422,6 +424,7 @@ function hydrateScheduledClass(row) {
 }
 
 export function getClassesForUser(user) {
+  settleClassStatuses();
   const monthKey = currentMonthKey();
   const monthLabel = new Date().toLocaleString("en-IN", { month: "long", year: "numeric" });
   const role = String(user?.role || "").trim().toLowerCase();
@@ -546,6 +549,8 @@ function hydrateMeeting(row) {
     duration_min: Number(row.duration_min || 45),
     join_url: rewriteAnonymousMeetUrl(row.join_url || meetingRoomUrl(row.id, kind)),
     status: row.status || "scheduled",
+    started_at: row.started_at || null,
+    completed_at: row.completed_at || null,
     month_key: String(row.starts_at || "").slice(0, 7)
   };
 }
@@ -613,6 +618,75 @@ export function cancelMeeting(id) {
   meeting.updated_at = new Date().toISOString();
   saveData();
   return hydrateMeeting({ ...meeting, status: "scheduled" });
+}
+
+function sessionEndTime(row) {
+  const start = new Date(row?.starts_at).getTime();
+  const durationMin = Math.max(15, Number(row?.duration_min) || 45);
+  if (!Number.isFinite(start)) {
+    return null;
+  }
+  return start + durationMin * 60 * 1000;
+}
+
+function findSessionRowByRoom(roomId) {
+  const raw = String(roomId || "").replace(/^Junnu-/i, "");
+  const classMatch = raw.match(/^Class(\d+)$/i);
+  if (classMatch) {
+    return (data.scheduled_classes || []).find((item) => Number(item.id) === Number(classMatch[1])) || null;
+  }
+  const numericId = Number(String(raw).replace(/^meet-/, ""));
+  if (!Number.isFinite(numericId) || numericId <= 0) {
+    return null;
+  }
+  return (
+    (data.meetings || []).find((item) => Number(item.id) === numericId) ||
+    (data.scheduled_classes || []).find((item) => Number(item.id) === numericId) ||
+    null
+  );
+}
+
+function completeIfWindowPassed(row, now = Date.now()) {
+  if (!row || row.status === "cancelled" || row.status === "done") {
+    return false;
+  }
+  const endAt = sessionEndTime(row);
+  const started = Boolean(row.started_at) || String(row.status || "").toLowerCase() === "live";
+  if (!started || !endAt || now <= endAt) {
+    return false;
+  }
+  row.status = "done";
+  row.completed_at = row.completed_at || new Date().toISOString();
+  row.updated_at = new Date().toISOString();
+  return true;
+}
+
+export function settleClassStatuses() {
+  let changed = false;
+  for (const row of [...(data.meetings || []), ...(data.scheduled_classes || [])]) {
+    if (completeIfWindowPassed(row)) {
+      changed = true;
+    }
+  }
+  if (changed) {
+    saveData();
+  }
+}
+
+export function markSessionStartedByRoom(roomId) {
+  const row = findSessionRowByRoom(roomId);
+  if (!row || row.status === "cancelled") {
+    return null;
+  }
+  if (!row.started_at) {
+    row.started_at = new Date().toISOString();
+  }
+  if (row.status !== "done") {
+    row.status = completeIfWindowPassed(row) ? "done" : "live";
+  }
+  row.updated_at = new Date().toISOString();
+  saveData();
+  return row;
 }
 
 export function createAssignment({ studentId, teacherId, mappedBy = null }) {
