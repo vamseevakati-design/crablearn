@@ -73,7 +73,9 @@ dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
-const snapshotDir = path.resolve(__dirname, "../junnu-snapshots");
+const snapshotDir = process.env.VERCEL
+  ? path.join("/tmp", "junnu-snapshots")
+  : path.resolve(__dirname, "../junnu-snapshots");
 const app = express();
 const port = Number(process.env.PORT || 4000);
 
@@ -586,9 +588,14 @@ app.post("/api/junnu/snapshot", (req, res) => {
   }
   const safeRoom = roomId.replace(/[^a-zA-Z0-9._-]/g, "_");
   const roomDir = path.join(snapshotDir, safeRoom);
-  fs.mkdirSync(roomDir, { recursive: true });
   const filename = `board-${Number(req.body?.pageIndex) || 0}-${Date.now()}.png`;
-  fs.writeFileSync(path.join(roomDir, filename), Buffer.from(match[1], "base64"));
+  try {
+    fs.mkdirSync(roomDir, { recursive: true });
+    fs.writeFileSync(path.join(roomDir, filename), Buffer.from(match[1], "base64"));
+  } catch (error) {
+    console.error("Junnu snapshot write failed:", error.message);
+    return res.status(503).json({ ok: false, message: "Snapshot storage is unavailable on this host." });
+  }
   const url = `/junnu-snapshots/${safeRoom}/${filename}`;
   junnuSaveSnapshot({
     roomId,
@@ -1062,8 +1069,10 @@ app.delete("/api/accounts/rates/subjects/:id", async (req, res) => {
   }
 });
 
-if (!fs.existsSync(snapshotDir)) {
+try {
   fs.mkdirSync(snapshotDir, { recursive: true });
+} catch (error) {
+  console.warn("Junnu snapshot directory skipped:", error.message);
 }
 app.use("/junnu-snapshots", express.static(snapshotDir));
 
