@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:full": "concurrently \"npm:api:dev\" \"npm:dev\"",
     "api": "node server/index.js",
-    "api:dev": "nodemon server/index.js",
+    "api:dev": "nodemon --watch server --watch shared --ext js,mjs,cjs --ignore crablearn-data.json --ignore artifacts --ignore dist server/index.js",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",

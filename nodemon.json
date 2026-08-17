@@ -1,0 +1,5 @@
+{
+  "watch": ["server", "shared"],
+  "ext": "js,mjs,cjs",
+  "ignore": ["crablearn-data.json", "junnu-snapshots", "artifacts", "dist", "node_modules"]
+}

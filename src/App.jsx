@@ -565,9 +565,6 @@ function classJoinState(session, now = Date.now(), role = "") {
   if (now <= endAt) {
     return { key: "live", label: "Join", canJoin: true };
   }
-  if (canHost && status === "scheduled") {
-    return { key: "expired", label: "Expired", canJoin: true, joinLabel: "Start anyway" };
-  }
   return { key: "expired", label: "Expired", canJoin: false };
 }
 
@@ -589,6 +586,19 @@ function SessionJoinControls({ session, onJoin, joinLabel = "Join", role = "", n
 
 function junnuRoomId(session) {
   return `${MEET_PRODUCT}-${session?.meeting_id || session?.id}`;
+}
+
+function toMeetingStartIso(localValue) {
+  const raw = String(localValue || "").trim();
+  if (!raw) {
+    return null;
+  }
+  const withSeconds = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw) ? `${raw}:00` : raw;
+  const date = new Date(withSeconds);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toISOString();
 }
 
 function App() {
@@ -648,7 +658,8 @@ function App() {
   const directoryTeachers = adminUsers.filter((user) => String(user.role || "").toLowerCase() === "teacher" && String(user.status || "").toLowerCase() === "approved");
   const educatorStudents = mappedRoster
     .map((item) => item.student)
-    .filter((person, index, list) => person && list.findIndex((row) => row.id === person.id) === index);
+    .filter((person, index, list) => person && list.findIndex((row) => Number(row.id) === Number(person.id)) === index);
+  const scheduleStudents = educatorStudents.length ? educatorStudents : directoryStudents;
 
   const activeSubjects = useMemo(
     () => subjectGroups.find((group) => group.name === activeCategory)?.subjects ?? [],
@@ -660,6 +671,7 @@ function App() {
   const currentUserRole = String(currentUser?.role || "").toLowerCase();
   const [nowTick, setNowTick] = useState(() => Date.now());
   const isAdmin = isPrivilegedAccount(currentUserRole);
+  const canScheduleClasses = currentUserRole === "teacher" || isAdmin;
   const learnerName = currentUser?.full_name || currentUser?.name || "Learner";
   const roleLabel = formatPortalRoleLabel(currentUserRole || activePortalRole);
   const isAccountsPortal = activePortalRole === "accounts";
@@ -674,11 +686,11 @@ function App() {
   const showEducatorAuth = portalScreen === "educator-login" && !showPortalSection;
   const showPublicPage = showMarketingContent || showEducatorJoin || showEducatorAuth || showStudentJoin || showQuizPage || showBookEducator;
   const showPortalPreviewSection = showPortalSection && !showAccountsDashboard;
-  const showStudentPortalTabs = Boolean(currentUser) && ["student", "teacher"].includes(activePortalRole) && currentUserRole === activePortalRole;
+  const showStudentPortalTabs = Boolean(currentUser) && ["student", "teacher"].includes(activePortalRole) && (currentUserRole === activePortalRole || isAdmin);
   const showPrivilegedWorkspaceTabs = Boolean(currentUser) && isAdmin;
   const showStudentSupportContent = !showAccountsDashboard && !isAdmin && portalScreen === "login";
   const isStudentLoginView = activePortalRole === "student" && portalScreen === "login";
-  const isStudentWorkspaceView = activePortalRole === "student" && ["dashboard", "live"].includes(portalScreen);
+  const isStudentWorkspaceView = ["student", "teacher"].includes(activePortalRole) && ["dashboard", "live", "schedule"].includes(portalScreen);
   const portalPreviewLabel = isAccountsPortal ? "Accounts workspace" : `${formatPortalRoleLabel(activePortalRole)} portal`;
   const portalLoginLabel = isAccountsPortal ? "accounts / admin" : activeSignInProfile.badgeText;
   const showGlobalHomeButton = showPortalSection || portalScreen !== "home";
@@ -698,6 +710,9 @@ function App() {
     }
     if (portalScreen === "live") {
       return "Join class";
+    }
+    if (portalScreen === "schedule") {
+      return "Schedule class";
     }
     if (portalScreen === "dashboard") {
       return "Classes";
@@ -746,7 +761,7 @@ function App() {
       return;
     }
     setPortalScreen((current) => {
-      if (["meet", "dashboard", "live", "admin-dashboard", "accounts-dashboard"].includes(current)) {
+      if (["meet", "dashboard", "live", "schedule", "admin-dashboard", "accounts-dashboard"].includes(current)) {
         return current;
       }
       if (routeRole === "accounts") {
@@ -1098,6 +1113,15 @@ function App() {
     setAdminUsersLoading(false);
   }
 
+  useEffect(() => {
+    if (!currentUser || !isAdmin) {
+      return;
+    }
+    if (portalScreen === "admin-dashboard" || portalScreen === "schedule") {
+      handleAdminListUsers();
+    }
+  }, [portalScreen, currentUser?.id, isAdmin]);
+
   async function handleMapAssignment(event) {
     event.preventDefault();
     if (!mapStudentId || !mapTeacherId) {
@@ -1141,15 +1165,30 @@ function App() {
       setMeetingMessage("Sign in again to schedule a call.");
       return;
     }
-    if (!meetingStart) {
-      setMeetingMessage("Choose a start time.");
+    const startsAt = toMeetingStartIso(meetingStart);
+    if (!startsAt) {
+      setMeetingMessage("Choose a valid start date and time.");
       return;
     }
     const isGroup = meetingKind === "m2m";
-    const studentIds = isGroup ? meetingStudentIds : [Number(meetingStudentId)];
-    const teacherIds = isGroup
-      ? (isAdmin ? meetingTeacherIds : [currentUser.id, ...meetingTeacherIds])
-      : [isAdmin ? Number(meetingTeacherId) : currentUser.id];
+    const studentIds = (isGroup ? meetingStudentIds : [Number(meetingStudentId)])
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id) && id > 0);
+    const teacherIds = (
+      isGroup
+        ? (isAdmin ? meetingTeacherIds : [currentUser.id, ...meetingTeacherIds])
+        : [isAdmin ? Number(meetingTeacherId) : currentUser.id]
+    )
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id) && id > 0);
+    if (!studentIds.length) {
+      setMeetingMessage("Select at least one student.");
+      return;
+    }
+    if (!teacherIds.length) {
+      setMeetingMessage(isAdmin ? "Select an educator for this class." : "Your educator account is required to schedule.");
+      return;
+    }
     try {
       const response = await fetch(`${apiBaseUrl}/api/meetings`, {
         method: "POST",
@@ -1159,7 +1198,7 @@ function App() {
           password: sessionPasswordRef.current,
           title: meetingTitle,
           kind: meetingKind,
-          startsAt: new Date(meetingStart).toISOString(),
+          startsAt,
           durationMin: Number(meetingDuration),
           platform: MEET_PRODUCT,
           studentIds,
@@ -1454,6 +1493,74 @@ function App() {
 
   function handleSignInToggle() {
     setSignInMenuOpen((open) => !open);
+  }
+
+  function renderScheduleForm() {
+    const studentOptions = currentUserRole === "teacher" ? educatorStudents : scheduleStudents;
+    return (
+      <form className="mobile-form schedule-form" onSubmit={handleScheduleMeeting}>
+        <label htmlFor="scheduleMeetingKind">Call type</label>
+        <select id="scheduleMeetingKind" value={meetingKind} onChange={(event) => setMeetingKind(event.target.value)}>
+          <option value="o2o">1 to 1</option>
+          <option value="m2m">Many to many</option>
+        </select>
+        <label htmlFor="scheduleMeetingTitle">Title</label>
+        <input id="scheduleMeetingTitle" value={meetingTitle} onChange={(event) => setMeetingTitle(event.target.value)} placeholder="Maths doubt session" />
+        <label htmlFor="scheduleMeetingStart">Start</label>
+        <input id="scheduleMeetingStart" type="datetime-local" value={meetingStart} onChange={(event) => setMeetingStart(event.target.value)} required />
+        <label htmlFor="scheduleMeetingDuration">Minutes</label>
+        <input id="scheduleMeetingDuration" type="number" min="15" step="15" value={meetingDuration} onChange={(event) => setMeetingDuration(event.target.value)} />
+        {meetingKind === "o2o" ? (
+          <>
+            <label htmlFor="scheduleMeetingStudent">Student</label>
+            <select id="scheduleMeetingStudent" value={meetingStudentId} onChange={(event) => setMeetingStudentId(event.target.value)} required>
+              <option value="">{studentOptions.length ? "Select student" : "No students available"}</option>
+              {studentOptions.map((user) => (
+                <option key={user.id} value={user.id}>{user.full_name}</option>
+              ))}
+            </select>
+            {isAdmin ? (
+              <>
+                <label htmlFor="scheduleMeetingTeacher">Educator</label>
+                <select id="scheduleMeetingTeacher" value={meetingTeacherId} onChange={(event) => setMeetingTeacherId(event.target.value)} required>
+                  <option value="">{directoryTeachers.length ? "Select educator" : "Load users or map an educator first"}</option>
+                  {directoryTeachers.map((user) => (
+                    <option key={user.id} value={user.id}>{user.full_name}</option>
+                  ))}
+                </select>
+              </>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <fieldset className="meeting-pick">
+              <legend>Students</legend>
+              {studentOptions.length ? studentOptions.map((user) => (
+                <label key={user.id}>
+                  <input type="checkbox" checked={meetingStudentIds.includes(Number(user.id))} onChange={() => toggleMeetingPerson(meetingStudentIds, setMeetingStudentIds, user.id)} />
+                  {user.full_name}
+                </label>
+              )) : <p>No students available to pick.</p>}
+            </fieldset>
+            {isAdmin ? (
+              <fieldset className="meeting-pick">
+                <legend>Educators</legend>
+                {directoryTeachers.map((user) => (
+                  <label key={user.id}>
+                    <input type="checkbox" checked={meetingTeacherIds.includes(Number(user.id))} onChange={() => toggleMeetingPerson(meetingTeacherIds, setMeetingTeacherIds, user.id)} />
+                    {user.full_name}
+                  </label>
+                ))}
+              </fieldset>
+            ) : null}
+          </>
+        )}
+        {!studentOptions.length ? (
+          <p className="schedule-empty">Map a student with this educator first, then return here to set the class time.</p>
+        ) : null}
+        <button className="button portal-button blue" type="submit" disabled={!studentOptions.length}>Save class</button>
+      </form>
+    );
   }
 
   return (
@@ -2454,7 +2561,37 @@ function App() {
             <button className={`portal-tab${portalScreen === "admin-dashboard" ? " active" : ""}`} type="button" onClick={() => openWorkspace("admin")}>Admin</button>
           </div>
         ) : null}
-        {showPortalPreviewSection ? (
+        {portalScreen === "schedule" && currentUser && canScheduleClasses ? (
+          <section className="schedule-desk">
+            <div className="meet-room-bar">
+              <div>
+                <p className="section-kicker">Schedule</p>
+                <h3>Set a Junnu class</h3>
+                <p>Pick the student, start time, and length. The class then appears on Classes and Join.</p>
+              </div>
+              <button className="button portal-button" type="button" onClick={() => setPortalScreen("dashboard")}>Back to classes</button>
+            </div>
+            <article className="mobile-card class-card schedule-card">
+              <p>{meetingMessage}</p>
+              {renderScheduleForm()}
+            </article>
+            {(classPack.sessions || []).filter((item) => item.meeting_id).length ? (
+              <article className="mobile-card class-card">
+                <h4>Saved calls</h4>
+                <ul className="roster-list">
+                  {classPack.sessions.filter((item) => item.meeting_id).map((item) => (
+                    <li key={item.id}>
+                      <strong>{item.mode_label}: {item.subject}</strong>
+                      <span>{formatClassWhen(item.starts_at)}</span>
+                      <span>{sessionPeopleLabel(item)}</span>
+                      <SessionJoinControls session={item} onJoin={joinScheduledClass} role={currentUserRole} now={nowTick} />
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ) : null}
+          </section>
+        ) : showPortalPreviewSection ? (
         <section className={`section portal-section${isStudentLoginView ? " student-portal-section" : ""}${isStudentWorkspaceView ? " student-workspace-section" : ""}`} id="portal">
           <div className={`section-heading-row${isStudentWorkspaceView ? " student-workspace-heading-row" : ""}`}>
             <div>
@@ -2472,6 +2609,9 @@ function App() {
                 <>
                   <button className={`portal-tab${portalScreen === "dashboard" ? " active" : ""}`} type="button" onClick={() => setPortalScreen("dashboard")}>Classes</button>
                   <button className={`portal-tab${portalScreen === "live" ? " active" : ""}`} type="button" onClick={() => setPortalScreen("live")}>Join</button>
+                  {canScheduleClasses && activePortalRole === "teacher" ? (
+                    <button className={`portal-tab${portalScreen === "schedule" ? " active" : ""}`} type="button" onClick={() => setPortalScreen("schedule")}>Schedule</button>
+                  ) : null}
                 </>
               ) : null}
             </div>
@@ -2635,52 +2775,23 @@ function App() {
                       </ul>
                     )}
                   </article>
-                  {currentUserRole === "teacher" ? (
+                  {canScheduleClasses ? (
                     <article className="mobile-card class-card">
                       <div className="card-header-line">
                         <span className="badge gold">Schedule Junnu</span>
                       </div>
                       <p>{meetingMessage}</p>
-                      <form className="mobile-form" onSubmit={handleScheduleMeeting}>
-                        <label htmlFor="teacherMeetingKind">Call type</label>
-                        <select id="teacherMeetingKind" value={meetingKind} onChange={(event) => setMeetingKind(event.target.value)}>
-                          <option value="o2o">1 to 1</option>
-                          <option value="m2m">Many to many</option>
-                        </select>
-                        <label htmlFor="teacherMeetingTitle">Title</label>
-                        <input id="teacherMeetingTitle" value={meetingTitle} onChange={(event) => setMeetingTitle(event.target.value)} placeholder="Maths doubt session" />
-                        <label htmlFor="teacherMeetingStart">Start</label>
-                        <input id="teacherMeetingStart" type="datetime-local" value={meetingStart} onChange={(event) => setMeetingStart(event.target.value)} required />
-                        <label htmlFor="teacherMeetingDuration">Minutes</label>
-                        <input id="teacherMeetingDuration" type="number" min="15" step="15" value={meetingDuration} onChange={(event) => setMeetingDuration(event.target.value)} />
-                        {meetingKind === "o2o" ? (
-                          <>
-                            <label htmlFor="teacherMeetingStudent">Student</label>
-                            <select id="teacherMeetingStudent" value={meetingStudentId} onChange={(event) => setMeetingStudentId(event.target.value)} required>
-                              <option value="">Select student</option>
-                              {educatorStudents.map((user) => (
-                                <option key={user.id} value={user.id}>{user.full_name}</option>
-                              ))}
-                            </select>
-                          </>
-                        ) : (
-                          <fieldset className="meeting-pick">
-                            <legend>Students</legend>
-                            {educatorStudents.map((user) => (
-                              <label key={user.id}>
-                                <input type="checkbox" checked={meetingStudentIds.includes(user.id)} onChange={() => toggleMeetingPerson(meetingStudentIds, setMeetingStudentIds, user.id)} />
-                                {user.full_name}
-                              </label>
-                            ))}
-                          </fieldset>
-                        )}
-                        <button className="button portal-button blue" type="submit">Save call</button>
-                      </form>
+                      <button className="button portal-button blue" type="button" onClick={() => setPortalScreen("schedule")}>
+                        Open schedule page
+                      </button>
                     </article>
                   ) : null}
                   <div className="bottom-nav">
                     <button className="bottom-link active" type="button">Classes</button>
                     <button className="bottom-link" type="button" onClick={() => setPortalScreen("live")}>Join</button>
+                    {canScheduleClasses ? (
+                      <button className="bottom-link" type="button" onClick={() => setPortalScreen("schedule")}>Schedule</button>
+                    ) : null}
                   </div>
                 </section>
               ) : null}
@@ -2715,6 +2826,9 @@ function App() {
                   <div className="bottom-nav">
                     <button className="bottom-link" type="button" onClick={() => setPortalScreen("dashboard")}>Classes</button>
                     <button className="bottom-link active" type="button">Join</button>
+                    {canScheduleClasses ? (
+                      <button className="bottom-link" type="button" onClick={() => setPortalScreen("schedule")}>Schedule</button>
+                    ) : null}
                   </div>
                 </section>
               ) : null}
@@ -2871,59 +2985,9 @@ function App() {
                   <article className="mobile-card admin-card">
                     <h4 className="admin-heading">Schedule Junnu</h4>
                     <p>{meetingMessage}</p>
-                    <form className="mobile-form" onSubmit={handleScheduleMeeting}>
-                      <label htmlFor="adminMeetingKind">Call type</label>
-                      <select id="adminMeetingKind" value={meetingKind} onChange={(event) => setMeetingKind(event.target.value)}>
-                        <option value="o2o">1 to 1</option>
-                        <option value="m2m">Many to many</option>
-                      </select>
-                      <label htmlFor="adminMeetingTitle">Title</label>
-                      <input id="adminMeetingTitle" value={meetingTitle} onChange={(event) => setMeetingTitle(event.target.value)} placeholder="Class call" />
-                      <label htmlFor="adminMeetingStart">Start</label>
-                      <input id="adminMeetingStart" type="datetime-local" value={meetingStart} onChange={(event) => setMeetingStart(event.target.value)} required />
-                      <label htmlFor="adminMeetingDuration">Minutes</label>
-                      <input id="adminMeetingDuration" type="number" min="15" step="15" value={meetingDuration} onChange={(event) => setMeetingDuration(event.target.value)} />
-                      {meetingKind === "o2o" ? (
-                        <>
-                          <label htmlFor="adminMeetingStudent">Student</label>
-                          <select id="adminMeetingStudent" value={meetingStudentId} onChange={(event) => setMeetingStudentId(event.target.value)} required>
-                            <option value="">Select student</option>
-                            {directoryStudents.map((user) => (
-                              <option key={user.id} value={user.id}>{user.full_name}</option>
-                            ))}
-                          </select>
-                          <label htmlFor="adminMeetingTeacher">Educator</label>
-                          <select id="adminMeetingTeacher" value={meetingTeacherId} onChange={(event) => setMeetingTeacherId(event.target.value)} required>
-                            <option value="">Select educator</option>
-                            {directoryTeachers.map((user) => (
-                              <option key={user.id} value={user.id}>{user.full_name}</option>
-                            ))}
-                          </select>
-                        </>
-                      ) : (
-                        <>
-                          <fieldset className="meeting-pick">
-                            <legend>Students</legend>
-                            {directoryStudents.map((user) => (
-                              <label key={user.id}>
-                                <input type="checkbox" checked={meetingStudentIds.includes(user.id)} onChange={() => toggleMeetingPerson(meetingStudentIds, setMeetingStudentIds, user.id)} />
-                                {user.full_name}
-                              </label>
-                            ))}
-                          </fieldset>
-                          <fieldset className="meeting-pick">
-                            <legend>Educators</legend>
-                            {directoryTeachers.map((user) => (
-                              <label key={user.id}>
-                                <input type="checkbox" checked={meetingTeacherIds.includes(user.id)} onChange={() => toggleMeetingPerson(meetingTeacherIds, setMeetingTeacherIds, user.id)} />
-                                {user.full_name}
-                              </label>
-                            ))}
-                          </fieldset>
-                        </>
-                      )}
-                      <button className="button portal-button blue" type="submit">Save call</button>
-                    </form>
+                    <button className="button portal-button blue" type="button" onClick={() => setPortalScreen("schedule")}>
+                      Open schedule page
+                    </button>
                     {(classPack.sessions || []).filter((item) => item.meeting_id).length ? (
                       <div>
                         {classPack.sessions.filter((item) => item.meeting_id).map((item) => (

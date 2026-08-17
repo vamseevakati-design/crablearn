@@ -3,7 +3,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.join(__dirname, "../crablearn-data.json");
+const bundledDbPath = path.join(__dirname, "../crablearn-data.json");
+const dbPath = process.env.VERCEL ? path.join("/tmp", "crablearn-data.json") : bundledDbPath;
 
 let data = {
   students: [
@@ -185,19 +186,27 @@ function syncPrivilegedAccount({ role, fullName, phone, email, password }) {
 }
 
 // Load existing data on startup
+let dataLoaded = false;
+
 function loadData() {
-  if (fs.existsSync(dbPath)) {
+  if (dataLoaded) {
+    return;
+  }
+  const sourcePath = fs.existsSync(dbPath) ? dbPath : bundledDbPath;
+  if (fs.existsSync(sourcePath)) {
     try {
-      const fileContent = fs.readFileSync(dbPath, "utf-8");
+      const fileContent = fs.readFileSync(sourcePath, "utf-8");
       data = JSON.parse(fileContent);
       normalizeDataShape();
     } catch (error) {
       console.error("Failed to load data:", error.message);
+      normalizeDataShape();
     }
   } else {
     normalizeDataShape();
     saveData();
   }
+  dataLoaded = true;
 }
 
 function saveData() {

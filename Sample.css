@@ -30,7 +30,9 @@ html, body {
 }
 
 html:has(.page-fit--home),
-body:has(.page-fit--home) {
+body:has(.page-fit--home),
+html:has(.page-fit--app),
+body:has(.page-fit--app) {
   height: auto;
   overflow-x: hidden;
   overflow-y: auto;
@@ -54,7 +56,8 @@ body {
   min-height: 0;
 }
 
-#root:has(.page-fit--home) {
+#root:has(.page-fit--home),
+#root:has(.page-fit--app) {
   height: auto;
   min-height: 100dvh;
 }
@@ -65,7 +68,8 @@ body {
   overflow: hidden;
 }
 
-.page-fit--home {
+.page-fit--home,
+.page-fit--app {
   height: auto;
   min-height: 100dvh;
   overflow: visible;
@@ -305,8 +309,15 @@ body {
   display: none;
 }
 
+.page-fit--app main {
+  flex: 1 1 auto;
+  overflow: visible;
+}
+
 .page-fit--app .portal-section {
-  min-height: 100%;
+  flex: none;
+  min-height: 0;
+  overflow: visible;
 }
 
 .page-fit .portal-section,
@@ -319,18 +330,21 @@ body {
   overflow-y: auto;
 }
 
-.page-fit main > .workspace-switcher {
-  flex: 0 0 auto;
-  min-height: auto;
-  overflow: visible;
-  margin: 0.55rem 0.85rem 0.75rem;
-  z-index: 4;
-}
-
 .page-fit .portal-layout,
 .page-fit .portal-phone {
   height: 100%;
   max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.page-fit--app .portal-section,
+.page-fit--app .portal-layout,
+.page-fit--app .portal-phone,
+.page-fit--app .mobile-screen {
+  height: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 a {
@@ -347,7 +361,8 @@ textarea {
 
 .site-shell {
   position: relative;
-  overflow: clip;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .floating-home-button {
@@ -1610,6 +1625,7 @@ h1 {
 }
 
 .mobile-form input,
+.mobile-form select,
 .callback-form input,
 .callback-form select,
 .callback-form textarea {
@@ -1619,7 +1635,8 @@ h1 {
   padding: 0.66rem 0.78rem;
 }
 
-.mobile-form input {
+.mobile-form input,
+.mobile-form select {
   background: #2a3242;
   color: #fff;
 }
@@ -2238,6 +2255,31 @@ h1 {
   text-align: center;
   color: var(--muted);
   font-size: 0.86rem;
+}
+
+.schedule-desk {
+  display: grid;
+  gap: 0.9rem;
+  width: min(44rem, calc(100% - 1.6rem));
+  margin: 0.4rem auto 1.4rem;
+  padding: 0.2rem 0 1.2rem;
+}
+
+.schedule-card {
+  padding: 1rem 1.05rem 1.15rem;
+}
+
+.schedule-form input,
+.schedule-form select {
+  background: #fff;
+  color: #1c1917;
+  border-color: #d6d3d1;
+}
+
+.schedule-empty {
+  margin: 0.2rem 0 0.4rem;
+  color: #9a3412;
+  font-size: 0.88rem;
 }
 
 .session-join-row {
