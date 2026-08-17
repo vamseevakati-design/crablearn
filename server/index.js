@@ -2,20 +2,34 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import fs from "fs";
+import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import {
+  junnuJoin,
+  junnuLeave,
+  junnuPoll,
+  junnuSaveSnapshot,
+  junnuSignal
+} from "./junnu.js";
+import { attachJunnuWs } from "./junnuWs.js";
+import {
   authenticateStudent,
   closeDb,
+  listJunnuSnapshots,
   createApprovalNotification,
   createAssignment,
+  createMeeting,
   createStudent,
+  cancelMeeting,
   deleteAssignment,
   ensurePrivilegedAccounts,
   getAssignmentsForUser,
+  getClassesForUser,
   getDb,
   listApprovalNotifications,
   listAssignments,
+  listMeetings,
   listStudents,
   query,
   resetStudentPassword,
@@ -35,6 +49,7 @@ import {
   getAnalyticsTopTeachers,
   getAnalyticsTrends,
   getMonthlyAccountReports,
+  getMonthlyClassCounts,
   getReportClassTypes,
   getReportPnL,
   getReportProfitShare,
@@ -58,11 +73,12 @@ dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
+const snapshotDir = path.resolve(__dirname, "../junnu-snapshots");
 const app = express();
 const port = Number(process.env.PORT || 4000);
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "8mb" }));
 
 const APPROVAL_CONTACTS = {
   admin: {
@@ -180,6 +196,21 @@ function requirePrivilegedActor(req, res) {
   return actor;
 }
 
+function requireJunnuActor(req, res) {
+  const { identifier, phone, password } = req.body ?? {};
+  const loginId = String(phone || identifier || "").trim();
+  if (!loginId || !password) {
+    res.status(400).json({ ok: false, message: "Sign in is required to join Junnu." });
+    return null;
+  }
+  const actor = authenticateStudent(loginId, String(password));
+  if (!actor) {
+    res.status(401).json({ ok: false, message: "Invalid login credentials." });
+    return null;
+  }
+  return actor;
+}
+
 async function ensureSchema() {
   await getDb(); // Load data from file first
   ensurePrivilegedAccounts();
@@ -285,7 +316,8 @@ app.post("/api/auth/login", (req, res) => {
       ok: true,
       message: `Welcome back, ${student.full_name}.`,
       student: sanitizeStudent(student),
-      assignments: getAssignmentsForUser(student)
+      assignments: getAssignmentsForUser(student),
+      classes: getClassesForUser(student)
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -388,6 +420,205 @@ app.post("/api/assignments/mine", (req, res) => {
   return res.json({
     ok: true,
     assignments: getAssignmentsForUser(actor)
+  });
+});
+
+app.post("/api/classes/mine", async (req, res) => {
+  const { phone, identifier, password } = req.body ?? {};
+  const loginId = String(phone || identifier || "").trim();
+  if (!loginId || !password) {
+    return res.status(400).json({ ok: false, message: "Username/phone and password are required." });
+  }
+  const actor = authenticateStudent(loginId, String(password));
+  if (!actor) {
+    return res.status(401).json({ ok: false, message: "Invalid login credentials." });
+  }
+  const classes = getClassesForUser(actor);
+  try {
+    const fromAccounts = await getMonthlyClassCounts({
+      fullName: actor.full_name,
+      role: actor.role,
+      monthKey: classes.month_key
+    });
+    if (fromAccounts && Number(fromAccounts.eligible) > 0) {
+      classes.eligible = Number(fromAccounts.eligible);
+      classes.pending = Number(fromAccounts.pending);
+      if (fromAccounts.month_label) {
+        classes.month_label = fromAccounts.month_label;
+      }
+    }
+  } catch (_error) {
+    // JSON class quotas remain when accounts data is unavailable.
+  }
+  return res.json({ ok: true, classes });
+});
+
+app.post("/api/meetings", (req, res) => {
+  const { phone, identifier, password, title, kind, startsAt, durationMin, platform, joinUrl, studentIds, teacherIds } = req.body ?? {};
+  const loginId = String(phone || identifier || "").trim();
+  if (!loginId || !password) {
+    return res.status(400).json({ ok: false, message: "Sign in is required to schedule a call." });
+  }
+  const actor = authenticateStudent(loginId, String(password));
+  if (!actor) {
+    return res.status(401).json({ ok: false, message: "Invalid login credentials." });
+  }
+  const role = String(actor.role || "").toLowerCase();
+  if (!["teacher", "admin", "supervisor"].includes(role)) {
+    return res.status(403).json({ ok: false, message: "Only educators and supervisors can schedule calls." });
+  }
+  try {
+    const assignedStudentIds = getAssignmentsForUser(actor).map((item) => Number(item.student_id));
+    const nextStudentIds = Array.isArray(studentIds) ? studentIds : [studentIds];
+    const nextTeacherIds = role === "teacher"
+      ? [actor.id, ...(Array.isArray(teacherIds) ? teacherIds : [])]
+      : (Array.isArray(teacherIds) ? teacherIds : [teacherIds]);
+    if (role === "teacher") {
+      const allowed = new Set(assignedStudentIds);
+      if (nextStudentIds.some((id) => !allowed.has(Number(id)))) {
+        return res.status(403).json({ ok: false, message: "You can only schedule calls with students mapped to you." });
+      }
+    }
+    const meeting = createMeeting({
+      title,
+      kind,
+      startsAt,
+      durationMin,
+      platform,
+      joinUrl,
+      hostId: actor.id,
+      studentIds: nextStudentIds,
+      teacherIds: nextTeacherIds,
+      createdBy: actor.full_name
+    });
+    return res.status(201).json({
+      ok: true,
+      message: `${meeting.mode_label} Junnu call scheduled.`,
+      meeting,
+      classes: getClassesForUser(actor),
+      meetings: listMeetings()
+    });
+  } catch (error) {
+    if (String(error.message) === "O2O_REQUIRES_PAIR") {
+      return res.status(400).json({ ok: false, message: "1 to 1 needs one student and one educator." });
+    }
+    if (String(error.message) === "M2M_REQUIRES_GROUP") {
+      return res.status(400).json({ ok: false, message: "Many to many needs at least three people." });
+    }
+    if (String(error.message) === "START_REQUIRED") {
+      return res.status(400).json({ ok: false, message: "Choose a start time." });
+    }
+    return res.status(500).json({ ok: false, message: "Could not schedule the call." });
+  }
+});
+
+app.post("/api/junnu/join", (req, res) => {
+  const actor = requireJunnuActor(req, res);
+  if (!actor) {
+    return;
+  }
+  try {
+    const payload = junnuJoin({
+      roomId: req.body?.roomId,
+      peerId: req.body?.peerId,
+      name: req.body?.name || actor.full_name
+    });
+    return res.json({ ok: true, ...payload });
+  } catch (_error) {
+    return res.status(400).json({ ok: false, message: "Could not join Junnu." });
+  }
+});
+
+app.post("/api/junnu/signal", (req, res) => {
+  const actor = requireJunnuActor(req, res);
+  if (!actor) {
+    return;
+  }
+  try {
+    const payload = junnuSignal({
+      roomId: req.body?.roomId,
+      from: req.body?.from,
+      to: req.body?.to,
+      type: req.body?.type,
+      data: req.body?.data
+    });
+    return res.json({ ok: true, ...payload });
+  } catch (_error) {
+    return res.status(400).json({ ok: false, message: "Could not send Junnu signal." });
+  }
+});
+
+app.post("/api/junnu/poll", (req, res) => {
+  const actor = requireJunnuActor(req, res);
+  if (!actor) {
+    return;
+  }
+  try {
+    const payload = junnuPoll({
+      roomId: req.body?.roomId,
+      peerId: req.body?.peerId,
+      after: req.body?.after
+    });
+    return res.json({ ok: true, ...payload });
+  } catch (_error) {
+    return res.status(400).json({ ok: false, message: "Could not read Junnu room." });
+  }
+});
+
+app.post("/api/junnu/leave", (req, res) => {
+  const actor = requireJunnuActor(req, res);
+  if (!actor) {
+    return;
+  }
+  return res.json({ ok: true, ...junnuLeave({ roomId: req.body?.roomId, peerId: req.body?.peerId }) });
+});
+
+app.post("/api/junnu/snapshot", (req, res) => {
+  const actor = requireJunnuActor(req, res);
+  if (!actor) {
+    return;
+  }
+  const roomId = String(req.body?.roomId || "").trim();
+  const image = String(req.body?.image || "");
+  const match = image.match(/^data:image\/png;base64,(.+)$/);
+  if (!roomId || !match) {
+    return res.status(400).json({ ok: false, message: "A PNG snapshot is required." });
+  }
+  const safeRoom = roomId.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const roomDir = path.join(snapshotDir, safeRoom);
+  fs.mkdirSync(roomDir, { recursive: true });
+  const filename = `board-${Number(req.body?.pageIndex) || 0}-${Date.now()}.png`;
+  fs.writeFileSync(path.join(roomDir, filename), Buffer.from(match[1], "base64"));
+  const url = `/junnu-snapshots/${safeRoom}/${filename}`;
+  junnuSaveSnapshot({
+    roomId,
+    pageIndex: req.body?.pageIndex,
+    filename,
+    url,
+    title: req.body?.title,
+    createdBy: actor.full_name
+  });
+  return res.json({
+    ok: true,
+    url,
+    snapshots: listJunnuSnapshots(roomId)
+  });
+});
+
+app.post("/api/admin/meetings/:id/cancel", (req, res) => {
+  const actor = requirePrivilegedActor(req, res);
+  if (!actor) {
+    return;
+  }
+  const removed = cancelMeeting(req.params.id);
+  if (!removed) {
+    return res.status(404).json({ ok: false, message: "Meeting not found." });
+  }
+  return res.json({
+    ok: true,
+    message: "Call cancelled.",
+    meetings: listMeetings(),
+    classes: getClassesForUser(actor)
   });
 });
 
@@ -831,9 +1062,14 @@ app.delete("/api/accounts/rates/subjects/:id", async (req, res) => {
   }
 });
 
+if (!fs.existsSync(snapshotDir)) {
+  fs.mkdirSync(snapshotDir, { recursive: true });
+}
+app.use("/junnu-snapshots", express.static(snapshotDir));
+
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
-  app.get(/^\/(?!api(?:\/|$)).*/, (_req, res) => {
+  app.get(/^\/(?!api(?:\/|$)|junnu-snapshots(?:\/|$)|junnu-ws(?:\/|$)).*/, (_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
@@ -852,7 +1088,9 @@ function start() {
       } catch (ratesError) {
         console.warn("Rates schema initialization skipped:", ratesError.message);
       }
-      app.listen(port, () => {
+      const server = http.createServer(app);
+      attachJunnuWs(server);
+      server.listen(port, () => {
         console.log(`crablearn listening on http://localhost:${port}`);
         if (fs.existsSync(distPath)) {
           console.log(`Serving frontend from: ${distPath}`);

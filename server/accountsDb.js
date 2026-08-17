@@ -728,6 +728,31 @@ export async function listTeacherAccounts(monthKey) {
   return result.rows;
 }
 
+export async function getMonthlyClassCounts({ fullName, role, monthKey }) {
+  await ensureAccountsSchema();
+  const name = String(fullName || "").trim();
+  const month = String(monthKey || "").trim();
+  if (!name || !month) {
+    return null;
+  }
+  const isTeacher = String(role || "").toLowerCase() === "teacher";
+  const sql = isTeacher
+    ? `SELECT
+         COALESCE(SUM(COALESCE(cmc, 0) + COALESCE(additional_class, 0)), 0)::float AS eligible,
+         COALESCE(SUM(COALESCE(pending_classes, GREATEST(COALESCE(cmc, 0) + COALESCE(additional_class, 0) - COALESCE(cmc_completed, 0), 0))), 0)::float AS pending,
+         MAX(month_label) AS month_label
+       FROM account_entries
+       WHERE month_key = $1 AND LOWER(TRIM(teacher_name)) = LOWER(TRIM($2))`
+    : `SELECT
+         COALESCE(SUM(COALESCE(cmc, 0) + COALESCE(additional_class, 0)), 0)::float AS eligible,
+         COALESCE(SUM(COALESCE(pending_classes, GREATEST(COALESCE(cmc, 0) + COALESCE(additional_class, 0) - COALESCE(cmc_completed, 0), 0))), 0)::float AS pending,
+         MAX(month_label) AS month_label
+       FROM account_entries
+       WHERE month_key = $1 AND LOWER(TRIM(student_name)) = LOWER(TRIM($2))`;
+  const result = await getPool().query(sql, [month, name]);
+  return result.rows[0] || null;
+}
+
 export async function getMonthlyAccountReports() {
   await ensureAccountsSchema();
 

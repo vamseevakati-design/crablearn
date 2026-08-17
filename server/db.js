@@ -57,7 +57,33 @@ let data = {
       created_at: new Date().toISOString()
     }
   ],
-  nextId: 6
+  class_quotas: [
+    { student_id: 1, teacher_id: 2, month_key: "2026-08", eligible: 8, pending: 5 }
+  ],
+  scheduled_classes: [
+    {
+      id: 6,
+      student_id: 1,
+      teacher_id: 2,
+      subject: "Mathematics",
+      platform: "Junnu",
+      starts_at: "2026-08-18T17:00:00+05:30",
+      join_url: "",
+      status: "scheduled"
+    },
+    {
+      id: 7,
+      student_id: 1,
+      teacher_id: 2,
+      subject: "Science",
+      platform: "Junnu",
+      starts_at: "2026-08-20T18:00:00+05:30",
+      join_url: "",
+      status: "scheduled"
+    }
+  ],
+  meetings: [],
+  nextId: 8
 };
 
 function normalizeDataShape() {
@@ -77,8 +103,28 @@ function normalizeDataShape() {
     data.assignments = [];
   }
 
+  if (!Array.isArray(data.scheduled_classes)) {
+    data.scheduled_classes = [];
+  }
+
+  if (!Array.isArray(data.class_quotas)) {
+    data.class_quotas = [];
+  }
+
+  if (!Array.isArray(data.meetings)) {
+    data.meetings = [];
+  }
+
+  if (!data.junnu_boards || typeof data.junnu_boards !== "object") {
+    data.junnu_boards = {};
+  }
+
+  if (!Array.isArray(data.junnu_snapshots)) {
+    data.junnu_snapshots = [];
+  }
+
   if (!Number.isFinite(Number(data.nextId))) {
-    data.nextId = data.students.length + data.callback_requests.length + data.approval_notifications.length + data.assignments.length + 1;
+    data.nextId = data.students.length + data.callback_requests.length + data.approval_notifications.length + data.assignments.length + data.scheduled_classes.length + data.meetings.length + 1;
   }
 
   data.students = data.students.map((student) => ({
@@ -336,6 +382,230 @@ export function getAssignmentsForUser(user) {
   return [];
 }
 
+export function currentMonthKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function hydrateScheduledClass(row) {
+  const student = findUserById(row.student_id);
+  const teacher = findUserById(row.teacher_id);
+  const startsAt = row.starts_at || row.scheduled_at;
+  const rawUrl = String(row.join_url || "");
+  const placeholderCall = !rawUrl || /zoom\.us\/join\/?$/i.test(rawUrl) || /webex\.com\/join/i.test(rawUrl) || /meet\.jit\.si/i.test(rawUrl);
+  return {
+    id: row.id,
+    student_id: row.student_id,
+    teacher_id: row.teacher_id,
+    student: toPublicUser(student),
+    teacher: toPublicUser(teacher),
+    students: student ? [toPublicUser(student)] : [],
+    teachers: teacher ? [toPublicUser(teacher)] : [],
+    subject: row.subject || "Class",
+    platform: placeholderCall ? "Junnu" : row.platform || "Junnu",
+    starts_at: startsAt,
+    duration_min: Number(row.duration_min || 45),
+    join_url: placeholderCall ? meetingRoomUrl(`Class${row.id}`, "o2o") : rewriteAnonymousMeetUrl(rawUrl),
+    status: row.status || "scheduled",
+    kind: "o2o",
+    mode_label: "1 to 1",
+    month_key: String(startsAt || "").slice(0, 7)
+  };
+}
+
+export function getClassesForUser(user) {
+  const monthKey = currentMonthKey();
+  const monthLabel = new Date().toLocaleString("en-IN", { month: "long", year: "numeric" });
+  const role = String(user?.role || "").trim().toLowerCase();
+  const userId = Number(user?.id);
+  const assignments = getAssignmentsForUser(user);
+  const sessions = [
+    ...(data.scheduled_classes || []).map(hydrateScheduledClass),
+    ...(data.meetings || []).map(hydrateMeeting).filter(Boolean)
+  ]
+    .filter((item) => {
+      if (role === "teacher") {
+        return Number(item.teacher_id) === userId || (item.teacher_ids || []).includes(userId) || Number(item.host_id) === userId;
+      }
+      if (role === "student") {
+        return Number(item.student_id) === userId || (item.student_ids || []).includes(userId) || (item.participant_ids || []).includes(userId);
+      }
+      if (role === "admin" || role === "supervisor") {
+        return true;
+      }
+      return false;
+    })
+    .sort((a, b) => String(a.starts_at).localeCompare(String(b.starts_at)));
+
+  const quotas = (data.class_quotas || []).filter((row) => {
+    if (String(row.month_key) !== monthKey) {
+      return false;
+    }
+    if (role === "teacher") {
+      return Number(row.teacher_id) === userId;
+    }
+    if (role === "student") {
+      return Number(row.student_id) === userId;
+    }
+    return role === "admin" || role === "supervisor";
+  });
+
+  let eligible = quotas.reduce((sum, row) => sum + Number(row.eligible || 0), 0);
+  let pending = quotas.reduce((sum, row) => sum + Number(row.pending || 0), 0);
+  if (!quotas.length && assignments.length) {
+    eligible = 8 * assignments.length;
+    const completed = sessions.filter((item) => item.month_key === monthKey && item.status === "done").length;
+    pending = Math.max(eligible - completed, 0);
+  }
+
+  return {
+    month_key: monthKey,
+    month_label: monthLabel,
+    eligible,
+    pending,
+    sessions: sessions.filter((item) => item.status !== "cancelled")
+  };
+}
+
+function uniqueIds(values) {
+  return [...new Set((values || []).map((value) => Number(value)).filter((value) => Number.isFinite(value) && value > 0))];
+}
+
+const ANON_MEET_HOST = "meet.mayfirst.org";
+const MEET_PRODUCT = "Junnu";
+
+function rewriteAnonymousMeetUrl(url) {
+  try {
+    const next = new URL(String(url || ""));
+    if (/meet\.jit\.si|meet\.ffmuc\.net|8x8\.vc|mayfirst/i.test(next.hostname)) {
+      next.hostname = ANON_MEET_HOST;
+      next.protocol = "https:";
+    }
+    next.pathname = next.pathname.replace(/CrabLearn/gi, MEET_PRODUCT);
+    return next.toString();
+  } catch (_error) {
+    return url;
+  }
+}
+
+function meetingRoomUrl(id, kind = "o2o") {
+  const isGroup = String(kind).toLowerCase() === "m2m";
+  const settings = [
+    "config.prejoinConfig.enabled=false",
+    "config.requireDisplayName=false",
+    "config.startWithVideoMuted=false",
+    "config.disableDeepLinking=true",
+    `config.subject="${MEET_PRODUCT}"`,
+    `config.disableTileView=${!isGroup}`,
+    "config.disableNS=false",
+    "config.disableAEC=false",
+    "config.disableAGC=false",
+    "config.constraints.audio.echoCancellation=true",
+    "config.constraints.audio.noiseSuppression=true",
+    "config.constraints.audio.autoGainControl=true"
+  ].join("&");
+  return `https://${ANON_MEET_HOST}/${MEET_PRODUCT}${id}#${settings}`;
+}
+
+function hydrateMeeting(row) {
+  if (!row) {
+    return null;
+  }
+  const studentIds = uniqueIds(row.student_ids);
+  const teacherIds = uniqueIds(row.teacher_ids);
+  const participantIds = uniqueIds(row.participant_ids?.length ? row.participant_ids : [...studentIds, ...teacherIds]);
+  const students = studentIds.map(findUserById).filter(Boolean).map(toPublicUser);
+  const teachers = teacherIds.map(findUserById).filter(Boolean).map(toPublicUser);
+  const kind = String(row.kind || "o2o").toLowerCase() === "m2m" ? "m2m" : "o2o";
+  return {
+    id: `meet-${row.id}`,
+    meeting_id: row.id,
+    kind,
+    mode_label: kind === "m2m" ? "Many to many" : "1 to 1",
+    student_id: studentIds[0] || null,
+    teacher_id: teacherIds[0] || null,
+    host_id: row.host_id || null,
+    student_ids: studentIds,
+    teacher_ids: teacherIds,
+    participant_ids: participantIds,
+    student: students[0] || null,
+    teacher: teachers[0] || null,
+    students,
+    teachers,
+    subject: row.title || (kind === "m2m" ? "Group class" : "1 to 1 class"),
+    platform: row.platform || "Junnu",
+    starts_at: row.starts_at,
+    duration_min: Number(row.duration_min || 45),
+    join_url: rewriteAnonymousMeetUrl(row.join_url || meetingRoomUrl(row.id, kind)),
+    status: row.status || "scheduled",
+    month_key: String(row.starts_at || "").slice(0, 7)
+  };
+}
+
+export function listMeetings() {
+  return (data.meetings || []).map(hydrateMeeting).filter(Boolean);
+}
+
+export function createMeeting({
+  title,
+  kind = "o2o",
+  startsAt,
+  durationMin = 45,
+  platform = "Junnu",
+  joinUrl = "",
+  hostId,
+  studentIds = [],
+  teacherIds = [],
+  createdBy = null
+}) {
+  const normalizedKind = String(kind || "o2o").toLowerCase() === "m2m" ? "m2m" : "o2o";
+  const students = uniqueIds(studentIds).map(findUserById).filter((user) => String(user?.role || "").toLowerCase() === "student");
+  const teachers = uniqueIds(teacherIds).map(findUserById).filter((user) => String(user?.role || "").toLowerCase() === "teacher");
+  if (!startsAt) {
+    throw new Error("START_REQUIRED");
+  }
+  if (normalizedKind === "o2o") {
+    if (students.length !== 1 || teachers.length !== 1) {
+      throw new Error("O2O_REQUIRES_PAIR");
+    }
+  } else if (students.length + teachers.length < 3) {
+    throw new Error("M2M_REQUIRES_GROUP");
+  }
+  const meeting = {
+    id: data.nextId++,
+    kind: normalizedKind,
+    title: String(title || "").trim() || (normalizedKind === "m2m" ? "Group class" : "1 to 1 class"),
+    starts_at: String(startsAt),
+    duration_min: Math.max(15, Number(durationMin) || 45),
+    platform: String(platform || "Junnu").trim() || "Junnu",
+    join_url: String(joinUrl || "").trim(),
+    host_id: hostId ? Number(hostId) : teachers[0]?.id || null,
+    student_ids: students.map((user) => user.id),
+    teacher_ids: teachers.map((user) => user.id),
+    participant_ids: [...students, ...teachers].map((user) => user.id),
+    status: "scheduled",
+    created_by: createdBy ? String(createdBy).trim() : null,
+    created_at: new Date().toISOString()
+  };
+  if (!meeting.join_url) {
+    meeting.join_url = meetingRoomUrl(meeting.id, meeting.kind);
+  }
+  data.meetings.push(meeting);
+  saveData();
+  return hydrateMeeting(meeting);
+}
+
+export function cancelMeeting(id) {
+  const numericId = Number(String(id).replace(/^meet-/, ""));
+  const meeting = (data.meetings || []).find((item) => Number(item.id) === numericId);
+  if (!meeting) {
+    return null;
+  }
+  meeting.status = "cancelled";
+  meeting.updated_at = new Date().toISOString();
+  saveData();
+  return hydrateMeeting({ ...meeting, status: "scheduled" });
+}
+
 export function createAssignment({ studentId, teacherId, mappedBy = null }) {
   const student = findUserById(studentId);
   const teacher = findUserById(teacherId);
@@ -501,4 +771,56 @@ export function resetStudentPassword(phone, newPassword) {
 
 export function closeDb() {
   saveData();
+}
+
+function persistableBoard(board) {
+  return {
+    pageIndex: Number(board?.pageIndex) || 0,
+    pages: Array.isArray(board?.pages) ? board.pages : []
+  };
+}
+
+export function loadJunnuBoard(roomId) {
+  const id = String(roomId || "").trim();
+  if (!id) {
+    return null;
+  }
+  return data.junnu_boards?.[id] || null;
+}
+
+export function saveJunnuBoard(roomId, board) {
+  const id = String(roomId || "").trim();
+  if (!id) {
+    return null;
+  }
+  if (!data.junnu_boards || typeof data.junnu_boards !== "object") {
+    data.junnu_boards = {};
+  }
+  data.junnu_boards[id] = persistableBoard(board);
+  saveData();
+  return data.junnu_boards[id];
+}
+
+export function addJunnuSnapshot(entry) {
+  if (!Array.isArray(data.junnu_snapshots)) {
+    data.junnu_snapshots = [];
+  }
+  const snapshot = {
+    id: data.nextId++,
+    room_id: String(entry.roomId || "").trim(),
+    page_index: Number(entry.pageIndex) || 0,
+    filename: String(entry.filename || "").trim(),
+    url: String(entry.url || "").trim(),
+    title: String(entry.title || "Junnu board").trim(),
+    created_by: String(entry.createdBy || "").trim(),
+    created_at: new Date().toISOString()
+  };
+  data.junnu_snapshots.push(snapshot);
+  saveData();
+  return snapshot;
+}
+
+export function listJunnuSnapshots(roomId) {
+  const id = String(roomId || "").trim();
+  return (data.junnu_snapshots || []).filter((item) => item.room_id === id);
 }

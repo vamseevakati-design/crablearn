@@ -7,6 +7,7 @@ dist/
 artifacts/
 *.db
 crablearn-data.json
+junnu-snapshots/
 npm-debug.log*
 .DS_Store
 *.log

@@ -6,6 +6,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY index.html vite.config.js Sample.css ./
 COPY src ./src
+COPY shared ./shared
 ENV VITE_API_BASE_URL=
 RUN npm run build
 
@@ -16,6 +17,7 @@ ENV PORT=4000
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY server ./server
+COPY shared ./shared
 COPY --from=build /app/dist ./dist
 EXPOSE 4000
 CMD ["node", "server/index.js"]

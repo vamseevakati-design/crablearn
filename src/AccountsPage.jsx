@@ -1810,7 +1810,7 @@ export default function AccountsPage({ apiBaseUrl, currentUser }) {
   }
 
   return (
-    <section className="section accounts-section" id="accounts">
+    <section className="section accounts-section accounts-page" id="accounts">
       <div className="accounts-header-row">
         <div>
           <p className="section-kicker">Accounts — logged in as <strong>{currentUser?.full_name || "User"}</strong> · <span style={{ textTransform:"capitalize" }}>{currentUser?.role || ""}</span></p>
