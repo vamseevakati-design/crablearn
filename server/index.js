@@ -1118,6 +1118,10 @@ try {
 }
 app.use("/junnu-snapshots", express.static(snapshotDir));
 
+app.use("/api", (_req, res) => {
+  res.status(404).json({ ok: false, message: "API endpoint not found." });
+});
+
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
   app.get(/^\/(?!api(?:\/|$)|junnu-snapshots(?:\/|$)|junnu-ws(?:\/|$)).*/, (_req, res) => {
