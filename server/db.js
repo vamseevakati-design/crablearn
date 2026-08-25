@@ -198,6 +198,12 @@ function loadData() {
       const fileContent = fs.readFileSync(sourcePath, "utf-8");
       data = JSON.parse(fileContent);
       normalizeDataShape();
+      const legacyDemoStudent = data.students.find((student) => student.phone === "9871587344" && student.password === "demo-password");
+      if (legacyDemoStudent) {
+        legacyDemoStudent.password = "Get2work";
+        legacyDemoStudent.updated_at = new Date().toISOString();
+        saveData();
+      }
     } catch (error) {
       console.error("Failed to load data:", error.message);
       normalizeDataShape();
