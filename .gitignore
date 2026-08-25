@@ -5,6 +5,7 @@ dist/
 .env.docker
 .env.local
 .env.*.local
+deepseek_key.py
 artifacts/
 *.db
 crablearn-data.json
