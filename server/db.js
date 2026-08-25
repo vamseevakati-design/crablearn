@@ -12,7 +12,7 @@ let data = {
       id: 1,
       full_name: "Tanisha",
       phone: "9871587344",
-      password: "demo-password",
+      password: "Get2work",
       status: "approved",
       role: "student",
       created_at: new Date().toISOString()
@@ -858,6 +858,21 @@ export function resetStudentPassword(phone, newPassword) {
     throw new Error("PASSWORD_REQUIRED");
   }
 
+  student.password = normalizedPassword;
+  student.updated_at = new Date().toISOString();
+  saveData();
+  return student;
+}
+
+export function changeStudentPassword(phone, currentPassword, newPassword) {
+  const student = authenticateStudent(phone, currentPassword);
+  if (!student) {
+    throw new Error("INVALID_CURRENT_PASSWORD");
+  }
+  const normalizedPassword = String(newPassword || "");
+  if (normalizedPassword.length < 6) {
+    throw new Error("PASSWORD_TOO_SHORT");
+  }
   student.password = normalizedPassword;
   student.updated_at = new Date().toISOString();
   saveData();

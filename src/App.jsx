@@ -1026,6 +1026,28 @@ function App() {
     }
   }
 
+  async function handleChangePassword(event) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const identifier = String(formData.get("identifier") || "").trim();
+    const currentPassword = String(formData.get("currentPassword") || "");
+    const newPassword = String(formData.get("newPassword") || "");
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/auth/change-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, currentPassword, newPassword })
+      });
+      const payload = await response.json();
+      setLoginMessage(payload.message || (response.ok ? "Password changed." : "Could not change password."));
+      if (response.ok && payload.ok) {
+        setAuthMode("login");
+      }
+    } catch (_error) {
+      setLoginMessage("Password service is unavailable. Please try again.");
+    }
+  }
+
   async function handleRegisterSubmit(event) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -2274,7 +2296,22 @@ function App() {
               </ul>
             </div>
             <div className="edu-auth-form">
-              {authMode === "login" ? (
+              {authMode === "change-password" ? (
+                <>
+                  <h2>Change student password</h2>
+                  <p className="edu-legal">Enter your current password to set a new one.</p>
+                  <form className="edu-underline-form" onSubmit={handleChangePassword}>
+                    <label htmlFor="studentChangeId">Username or phone<span>*</span></label>
+                    <input id="studentChangeId" name="identifier" type="text" defaultValue={loginIdentifier} required />
+                    <label htmlFor="studentCurrentPassword">Current password<span>*</span></label>
+                    <input id="studentCurrentPassword" name="currentPassword" type="password" required />
+                    <label htmlFor="studentNewPassword">New password<span>*</span></label>
+                    <input id="studentNewPassword" name="newPassword" type="password" minLength="6" required />
+                    <button className="button coral student-login-btn" type="submit">Change password</button>
+                  </form>
+                  <p className="student-switch"><button type="button" onClick={() => setAuthMode("login")}>Back to log in</button></p>
+                </>
+              ) : authMode === "login" ? (
                 <>
                   <h2>Log in as an Educator</h2>
                   <button
@@ -2316,7 +2353,7 @@ function App() {
                     <button className="button coral student-login-btn" type="submit">Log in</button>
                   </form>
                   <p className="edu-legal">By clicking Continue or Sign up, you agree to Crab Learn Terms of Use and Privacy Policy.</p>
-                  <button className="edu-link" type="button" onClick={() => setLoginMessage("Use Contact on the homepage if you need help resetting access.")}>Forgot Password?</button>
+                  <button className="edu-link" type="button" onClick={() => setAuthMode("change-password")}>Change password</button>
                   <p className="student-switch">Don't have an account? <button type="button" onClick={() => setAuthMode("register")}>Sign up</button></p>
                 </>
               ) : (

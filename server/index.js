@@ -16,6 +16,7 @@ import {
 import { attachJunnuWs } from "./junnuWs.js";
 import {
   authenticateStudent,
+  changeStudentPassword,
   closeDb,
   listJunnuSnapshots,
   createApprovalNotification,
@@ -362,6 +363,26 @@ app.post("/api/auth/register", (req, res) => {
       return res.status(400).json({ ok: false, message: "fullName, phone, and password are required." });
     }
     return res.status(500).json({ ok: false, message: "Could not create account." });
+  }
+});
+
+app.post("/api/auth/change-password", (req, res) => {
+  const { identifier, phone, currentPassword, newPassword } = req.body ?? {};
+  const loginId = String(phone || identifier || "").trim();
+  if (!loginId || !currentPassword || !newPassword) {
+    return res.status(400).json({ ok: false, message: "Username/phone, current password, and new password are required." });
+  }
+  try {
+    const student = changeStudentPassword(loginId, String(currentPassword), String(newPassword));
+    return res.json({ ok: true, message: `Password changed for ${student.full_name}.` });
+  } catch (error) {
+    if (String(error.message) === "INVALID_CURRENT_PASSWORD") {
+      return res.status(401).json({ ok: false, message: "Current password is incorrect." });
+    }
+    if (String(error.message) === "PASSWORD_TOO_SHORT") {
+      return res.status(400).json({ ok: false, message: "New password must be at least 6 characters." });
+    }
+    return res.status(500).json({ ok: false, message: "Could not change password." });
   }
 });
 
