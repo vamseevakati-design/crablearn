@@ -670,7 +670,14 @@ function App() {
   const educatorStudents = mappedRoster
     .map((item) => item.student)
     .filter((person, index, list) => person && list.findIndex((row) => Number(row.id) === Number(person.id)) === index);
-  const scheduleStudents = educatorStudents.length ? educatorStudents : directoryStudents;
+  const studentMappings = new Map();
+  const teacherMappings = new Map();
+  mappedRoster.forEach((item) => {
+    if (item.student && item.teacher) {
+      studentMappings.set(Number(item.student_id), [...(studentMappings.get(Number(item.student_id)) || []), item.teacher]);
+      teacherMappings.set(Number(item.teacher_id), [...(teacherMappings.get(Number(item.teacher_id)) || []), item.student]);
+    }
+  });
 
   const activeSubjects = useMemo(
     () => subjectGroups.find((group) => group.name === activeCategory)?.subjects ?? [],
@@ -976,6 +983,9 @@ function App() {
 
       setCurrentUser(signedInUser);
       sessionPasswordRef.current = password;
+      if (isPrivilegedAccount(signedInRole)) {
+        setAdminPassword(password);
+      }
       setMappedRoster(Array.isArray(payload.assignments) ? payload.assignments : []);
       setClassPack(payload.classes || { month_label: "", eligible: 0, pending: 0, sessions: [] });
       loadMyClasses(phone, password);
@@ -1536,7 +1546,7 @@ function App() {
   }
 
   function renderScheduleForm() {
-    const studentOptions = currentUserRole === "teacher" ? educatorStudents : scheduleStudents;
+    const studentOptions = currentUserRole === "teacher" ? educatorStudents : directoryStudents;
     return (
       <form className="mobile-form schedule-form" onSubmit={handleScheduleMeeting}>
         <label htmlFor="scheduleMeetingKind">Call type</label>
@@ -1562,12 +1572,13 @@ function App() {
             {isAdmin ? (
               <>
                 <label htmlFor="scheduleMeetingTeacher">Educator</label>
-                <select id="scheduleMeetingTeacher" value={meetingTeacherId} onChange={(event) => setMeetingTeacherId(event.target.value)} required>
-                  <option value="">{directoryTeachers.length ? "Select educator" : "Load users or map an educator first"}</option>
+                <select id="scheduleMeetingTeacher" value={meetingTeacherId} onChange={(event) => setMeetingTeacherId(event.target.value)} required={Boolean(directoryTeachers.length)}>
+                  <option value="">{directoryTeachers.length ? "Select educator" : "No approved educators loaded"}</option>
                   {directoryTeachers.map((user) => (
                     <option key={user.id} value={user.id}>{user.full_name}</option>
                   ))}
                 </select>
+                {!directoryTeachers.length ? <p className="schedule-empty">Load or refresh approved users before choosing an educator.</p> : null}
               </>
             ) : null}
           </>
@@ -3022,6 +3033,22 @@ function App() {
                         ))}
                       </div>
                     )}
+                    {adminUsers.length ? (
+                      <div className="admin-mapping-summary">
+                        <h5>Student to educator view</h5>
+                        {directoryStudents.map((student) => (
+                          <p key={`student-map-${student.id}`}>
+                            <strong>{student.full_name}</strong>: {studentMappings.get(Number(student.id))?.map((teacher) => teacher.full_name).join(", ") || "Not mapped"}
+                          </p>
+                        ))}
+                        <h5>Educator to student view</h5>
+                        {directoryTeachers.map((teacher) => (
+                          <p key={`teacher-map-${teacher.id}`}>
+                            <strong>{teacher.full_name}</strong>: {teacherMappings.get(Number(teacher.id))?.map((student) => student.full_name).join(", ") || "No students mapped"}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
                   </article>
 
                   <article className="mobile-card admin-card">

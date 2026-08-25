@@ -6,6 +6,7 @@ import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import {
+  isAllowedJunnuRoomActor,
   junnuJoin,
   junnuLeave,
   junnuPoll,
@@ -521,10 +522,17 @@ app.post("/api/junnu/join", (req, res) => {
   if (!actor) {
     return;
   }
+  const roomId = String(req.body?.roomId || "").trim();
+  if (!isAllowedJunnuRoomActor(actor, roomId)) {
+    return res.status(403).json({
+      ok: false,
+      message: "This Junnu room is only visible to the mapped educator, student, and admin."
+    });
+  }
   try {
-    markSessionStartedByRoom(req.body?.roomId);
+    markSessionStartedByRoom(roomId);
     const payload = junnuJoin({
-      roomId: req.body?.roomId,
+      roomId,
       peerId: req.body?.peerId,
       name: req.body?.name || actor.full_name
     });
@@ -549,9 +557,16 @@ app.post("/api/junnu/signal", (req, res) => {
   if (!actor) {
     return;
   }
+  const roomId = String(req.body?.roomId || "").trim();
+  if (!isAllowedJunnuRoomActor(actor, roomId)) {
+    return res.status(403).json({
+      ok: false,
+      message: "This Junnu room is only visible to the mapped educator, student, and admin."
+    });
+  }
   try {
     const payload = junnuSignal({
-      roomId: req.body?.roomId,
+      roomId,
       from: req.body?.from,
       to: req.body?.to,
       type: req.body?.type,
@@ -568,9 +583,16 @@ app.post("/api/junnu/poll", (req, res) => {
   if (!actor) {
     return;
   }
+  const roomId = String(req.body?.roomId || "").trim();
+  if (!isAllowedJunnuRoomActor(actor, roomId)) {
+    return res.status(403).json({
+      ok: false,
+      message: "This Junnu room is only visible to the mapped educator, student, and admin."
+    });
+  }
   try {
     const payload = junnuPoll({
-      roomId: req.body?.roomId,
+      roomId,
       peerId: req.body?.peerId,
       after: req.body?.after
     });
@@ -585,7 +607,14 @@ app.post("/api/junnu/leave", (req, res) => {
   if (!actor) {
     return;
   }
-  return res.json({ ok: true, ...junnuLeave({ roomId: req.body?.roomId, peerId: req.body?.peerId }) });
+  const roomId = String(req.body?.roomId || "").trim();
+  if (roomId && !isAllowedJunnuRoomActor(actor, roomId)) {
+    return res.status(403).json({
+      ok: false,
+      message: "This Junnu room is only visible to the mapped educator, student, and admin."
+    });
+  }
+  return res.json({ ok: true, ...junnuLeave({ roomId, peerId: req.body?.peerId }) });
 });
 
 app.post("/api/junnu/snapshot", (req, res) => {

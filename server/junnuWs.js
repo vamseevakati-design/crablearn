@@ -1,6 +1,6 @@
 import { WebSocketServer } from "ws";
 import { authenticateStudent } from "./db.js";
-import { junnuBindSocket, junnuSignal, junnuUnbindSocket } from "./junnu.js";
+import { isAllowedJunnuRoomActor, junnuBindSocket, junnuSignal, junnuUnbindSocket } from "./junnu.js";
 
 export function attachJunnuWs(httpServer) {
   const wss = new WebSocketServer({ server: httpServer, path: "/junnu-ws" });
@@ -14,7 +14,7 @@ export function attachJunnuWs(httpServer) {
       }
       if (message.type === "hello") {
         const actor = authenticateStudent(String(message.identifier || ""), String(message.password || ""));
-        if (!actor || !message.roomId || !message.peerId) {
+        if (!actor || !message.roomId || !message.peerId || !isAllowedJunnuRoomActor(actor, message.roomId)) {
           socket.close();
           return;
         }

@@ -1,5 +1,6 @@
 import {
   addJunnuSnapshot,
+  getClassesForUser,
   listJunnuSnapshots,
   loadJunnuBoard,
   saveJunnuBoard
@@ -9,6 +10,33 @@ import { applyBoardOp, emptyBoard, normalizeBoard } from "../shared/junnuBoard.j
 const rooms = new Map();
 const sockets = new Map();
 const persistTimers = new Map();
+
+export function isAllowedJunnuRoomActor(actor, roomId) {
+  if (!actor || !roomId) {
+    return false;
+  }
+  const role = String(actor.role || "").trim().toLowerCase();
+  if (role === "admin" || role === "supervisor") {
+    return true;
+  }
+  const roomKey = String(roomId || "").trim();
+  const sessions = getClassesForUser(actor) || [];
+  for (const session of sessions) {
+    const directId = session?.meeting_id || session?.id;
+    if (!directId) {
+      continue;
+    }
+    const candidates = new Set([
+      `Junnu-${directId}`,
+      String(directId),
+      `Class${directId}`
+    ]);
+    if (candidates.has(roomKey)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 function iceServers() {
   const servers = [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }];
@@ -44,6 +72,7 @@ function getRoom(roomId) {
       peers: new Map(),
       signals: [],
       nextSignal: 1,
+      presenter: null,
       board: normalizeBoard(loadJunnuBoard(id) || emptyBoard())
     });
   }
@@ -136,6 +165,7 @@ export function junnuJoin({ roomId, peerId, name }) {
     peers: publicPeers(live, peerId),
     iceServers: iceServers(),
     after: live.nextSignal - 1,
+    presenter: live.presenter,
     board: live.board,
     snapshots: listJunnuSnapshots(roomId)
   };
@@ -149,6 +179,16 @@ export function junnuSignal({ roomId, from, to, type, data }) {
   const peer = room.peers.get(from);
   if (peer) {
     peer.seenAt = Date.now();
+  }
+  if (type === "presenter") {
+    if (data?.active) {
+      room.presenter = {
+        peerId: from,
+        name: peer?.name || String(data.name || "Presenter").trim() || "Presenter"
+      };
+    } else if (room.presenter?.peerId === from) {
+      room.presenter = null;
+    }
   }
   if (type === "board" && data?.action !== "laser") {
     room.board = applyBoardOp(room.board, data);
@@ -176,13 +216,13 @@ export function junnuPoll({ roomId, peerId, after }) {
   pruneRoom(room, roomId);
   const live = getRoom(roomId);
   if (!live) {
-    return { peers: [], messages: [], after: Number(after) || 0, iceServers: iceServers(), board: emptyBoard(), snapshots: listJunnuSnapshots(roomId) };
+    return { peers: [], messages: [], after: Number(after) || 0, iceServers: iceServers(), board: emptyBoard(), presenter: null, snapshots: listJunnuSnapshots(roomId) };
   }
   const peer = live.peers.get(peerId);
   if (peer) {
     peer.seenAt = Date.now();
   } else {
-    return { peers: [], messages: [], after: Number(after) || 0, iceServers: iceServers(), board: emptyBoard(), snapshots: listJunnuSnapshots(roomId) };
+    return { peers: [], messages: [], after: Number(after) || 0, iceServers: iceServers(), board: emptyBoard(), presenter: null, snapshots: listJunnuSnapshots(roomId) };
   }
   const cursor = Number(after) || 0;
   const messages = live.signals.filter((item) => item.id > cursor && (item.to === peerId || item.to === "*") && item.from !== peerId);
@@ -192,6 +232,7 @@ export function junnuPoll({ roomId, peerId, after }) {
     after: live.nextSignal - 1,
     iceServers: iceServers(),
     board: live.board,
+    presenter: live.presenter,
     snapshots: listJunnuSnapshots(roomId)
   };
 }
@@ -202,6 +243,16 @@ export function junnuLeave({ roomId, peerId }) {
     return { ok: true };
   }
   room.peers.delete(peerId);
+  if (room.presenter?.peerId === peerId) {
+    room.presenter = null;
+    room.signals.push({
+      id: room.nextSignal++,
+      from: peerId,
+      to: "*",
+      type: "presenter",
+      data: { active: false }
+    });
+  }
   junnuUnbindSocket(roomId, peerId);
   room.signals.push({
     id: room.nextSignal++,

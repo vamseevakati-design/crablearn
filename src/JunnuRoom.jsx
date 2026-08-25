@@ -210,12 +210,16 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
   const afterRef = useRef(0);
   const peersRef = useRef(new Map());
   const streamRef = useRef(null);
+  const screenStreamRef = useRef(null);
+  const shareModeRef = useRef("camera");
   const sendBoardRef = useRef(async () => {});
+  const sendControlRef = useRef(async () => {});
   const boardStateRef = useRef(normalizeBoard(null));
   const drawingRef = useRef(null);
   const laserTimerRef = useRef(null);
   const iceServersRef = useRef([{ urls: ["stun:stun.l.google.com:19302"] }]);
   const wsReadyRef = useRef(false);
+  const connectionsRef = useRef(new Map());
   const [status, setStatus] = useState("Starting Junnu…");
   const [remoteTiles, setRemoteTiles] = useState([]);
   const [tool, setTool] = useState("pen");
@@ -226,6 +230,8 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
   const [snapshots, setSnapshots] = useState([]);
   const [aiStatus, setAiStatus] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
+  const [shareMode, setShareMode] = useState("camera");
+  const [presenter, setPresenter] = useState(null);
   const [boardMeta, setBoardMeta] = useState({
     pageIndex: 0,
     pageCount: 1,
@@ -233,6 +239,30 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
     canRedo: false,
     background: "white"
   });
+
+  function syncLocalSenders(pc) {
+    const cameraStream = streamRef.current;
+    const screenStream = screenStreamRef.current;
+    const activeStream = shareModeRef.current === "screen" && screenStream ? screenStream : cameraStream;
+    const activeVideo = activeStream?.getVideoTracks?.()[0] || null;
+    const activeAudio = cameraStream?.getAudioTracks?.()[0] || null;
+    if (activeVideo) {
+      const currentSender = pc.getSenders().find((sender) => sender.track?.kind === "video");
+      if (currentSender) {
+        currentSender.replaceTrack(activeVideo).catch(() => {});
+      } else {
+        pc.addTrack(activeVideo, activeStream);
+      }
+    }
+    if (activeAudio) {
+      const currentSender = pc.getSenders().find((sender) => sender.track?.kind === "audio");
+      if (currentSender) {
+        currentSender.replaceTrack(activeAudio).catch(() => {});
+      } else {
+        pc.addTrack(activeAudio, cameraStream);
+      }
+    }
+  }
 
   function syncMeta() {
     const board = boardStateRef.current;
@@ -248,6 +278,50 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
   function redraw() {
     paintPage(boardRef.current, currentPage(boardStateRef.current));
     syncMeta();
+  }
+
+  async function toggleScreenShare() {
+    if (shareModeRef.current === "screen" && screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((track) => track.stop());
+      screenStreamRef.current = null;
+      shareModeRef.current = "camera";
+      setShareMode("camera");
+      setPresenter(null);
+      sendControlRef.current({ active: false });
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = streamRef.current || null;
+      }
+      connectionsRef.current.forEach((item) => syncLocalSenders(item.pc));
+      setStatus("Camera is back on. Whiteboard remains live.");
+      return;
+    }
+    try {
+      const capture = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 30 },
+        audio: false
+      });
+      const videoTrack = capture.getVideoTracks()[0];
+      if (!videoTrack) {
+        throw new Error("No display video track was captured.");
+      }
+      videoTrack.onended = () => {
+        if (screenStreamRef.current === capture) {
+          toggleScreenShare();
+        }
+      };
+      screenStreamRef.current = capture;
+      shareModeRef.current = "screen";
+      setShareMode("screen");
+      setPresenter({ peerId: peerIdRef.current, name: displayName });
+      sendControlRef.current({ active: true, name: displayName });
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = capture;
+      }
+      connectionsRef.current.forEach((item) => syncLocalSenders(item.pc));
+      setStatus("Screen share is live. You can switch back to your camera anytime.");
+    } catch (_error) {
+      setStatus("Screen share was blocked. Your camera remains active.");
+    }
   }
 
   function applyLocalOp(op, fromSelf = false) {
@@ -285,7 +359,7 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
   useEffect(() => {
     let cancelled = false;
     const connections = new Map();
-    const iceQueues = new Map();
+      connectionsRef.current = connections;
     let socket;
 
     function updateTiles() {
@@ -331,6 +405,7 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
     }
 
     sendBoardRef.current = (data) => sendSignal("*", "board", data);
+    sendControlRef.current = (data) => sendSignal("*", "presenter", data);
 
     function attachLocal(pc) {
       const stream = streamRef.current;
@@ -345,6 +420,7 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
           pc.addTrack(track, stream);
         }
       });
+      syncLocalSenders(pc);
       applyCrystalSenders(pc);
     }
 
@@ -405,6 +481,13 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
     }
 
     async function handleMessage(message) {
+      if (message.type === "presenter") {
+        setPresenter(message.data?.active ? {
+          peerId: message.from,
+          name: message.data.name || peersRef.current.get(message.from) || "Presenter"
+        } : null);
+        return;
+      }
       if (message.type === "board") {
         if (message.data?.action === "laser") {
           setLaser({ x: message.data.x, y: message.data.y });
@@ -562,6 +645,7 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
       afterRef.current = joined.after || 0;
       boardStateRef.current = normalizeBoard(joined.board);
       setSnapshots(joined.snapshots || []);
+      setPresenter(joined.presenter || null);
       redraw();
       setStatus(joined.peers?.length ? "Connecting Junnu HD…" : "Waiting for the other person to join Junnu…");
       openSocket();
@@ -584,6 +668,7 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
           if (snapshot.snapshots) {
             setSnapshots(snapshot.snapshots);
           }
+          setPresenter(snapshot.presenter || null);
           await syncPeers(snapshot.peers || []);
           if (!wsReadyRef.current) {
             for (const message of snapshot.messages || []) {
@@ -628,6 +713,12 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
       }).catch(() => {});
       connections.forEach((item) => item.pc.close());
       connections.clear();
+      connectionsRef.current = new Map();
+      screenStreamRef.current?.getTracks().forEach((track) => track.stop());
+      screenStreamRef.current = null;
+      shareModeRef.current = "camera";
+      setShareMode("camera");
+      setPresenter(null);
       streamRef.current?.getTracks().forEach((track) => track.stop());
     };
   }, [apiBaseUrl, roomId, displayName, identifier, password]);
@@ -873,12 +964,12 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
       <aside className="junnu-filmstrip" aria-label="Live cameras">
         <figure className="junnu-pip-card junnu-pip-card--self">
           <video ref={localVideoRef} autoPlay muted playsInline />
-          <figcaption>You · {displayName}</figcaption>
+          <figcaption>You · {displayName}{presenter?.peerId === peerIdRef.current ? <span className="junnu-presenter-badge">Presenter</span> : null}</figcaption>
         </figure>
         {remoteTiles.length ? remoteTiles.map((tile) => (
           <figure key={tile.peerId} className="junnu-pip-card">
             <video id={`junnu-remote-${tile.peerId}`} autoPlay playsInline />
-            <figcaption>{tile.name}</figcaption>
+            <figcaption>{tile.name}{presenter?.peerId === tile.peerId ? <span className="junnu-presenter-badge">Presenter</span> : null}</figcaption>
           </figure>
         )) : (
           <p className="junnu-pip-wait">Waiting for the other person…</p>
@@ -889,6 +980,22 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
           <strong>Whiteboard</strong>
           <button type="button" disabled={!boardMeta.canUndo} onClick={() => emit({ action: "undo" })}>Undo</button>
           <button type="button" disabled={!boardMeta.canRedo} onClick={() => emit({ action: "redo" })}>Redo</button>
+          <button className={shareMode === "screen" ? "active" : ""} type="button" onClick={toggleScreenShare}>{shareMode === "screen" ? "Stop share" : "Share screen"}{presenter ? ` · ${presenter.name} presenting` : ""}</button>
+          <button className={shareMode === "camera" ? "active" : ""} type="button" onClick={() => {
+            if (screenStreamRef.current) {
+              screenStreamRef.current.getTracks().forEach((track) => track.stop());
+              screenStreamRef.current = null;
+            }
+            shareModeRef.current = "camera";
+            setShareMode("camera");
+            setPresenter(null);
+            sendControlRef.current({ active: false });
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = streamRef.current || null;
+            }
+            connectionsRef.current.forEach((item) => syncLocalSenders(item.pc));
+            setStatus("Camera is active again.");
+          }}>Camera</button>
           <button className={tool === "pen" ? "active" : ""} type="button" onClick={() => setTool("pen")}>Pen</button>
           <button className={tool === "highlight" ? "active" : ""} type="button" onClick={() => setTool("highlight")}>Highlight</button>
           <button className={tool === "erase" ? "active" : ""} type="button" onClick={() => setTool("erase")}>Eraser</button>
