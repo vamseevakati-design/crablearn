@@ -47,8 +47,11 @@ let data = {
       created_at: new Date().toISOString()
     }
   ],
+  educators: [],
+  staff_accounts: [],
   callback_requests: [],
   approval_notifications: [],
+  password_change_requests: [],
   assignments: [
     {
       id: 5,
@@ -92,6 +95,27 @@ function normalizeDataShape() {
     data.students = [];
   }
 
+  if (!Array.isArray(data.educators)) {
+    data.educators = [];
+  }
+
+  if (!Array.isArray(data.staff_accounts)) {
+    data.staff_accounts = [];
+  }
+
+  // Move legacy role-based records into their dedicated account collections.
+  if (data.students.some((account) => ["teacher", "admin", "supervisor", "engineer", "accounts"].includes(String(account.role || "").toLowerCase()))) {
+    const legacyStudents = [];
+    for (const account of data.students) {
+      const role = String(account.role || "student").toLowerCase();
+      if (role === "teacher") data.educators.push(account);
+      else if (["admin", "supervisor", "engineer", "accounts"].includes(role)) data.staff_accounts.push(account);
+      else legacyStudents.push(account);
+    }
+    data.students = legacyStudents;
+    saveData();
+  }
+
   if (!Array.isArray(data.callback_requests)) {
     data.callback_requests = [];
   }
@@ -99,6 +123,13 @@ function normalizeDataShape() {
   if (!Array.isArray(data.approval_notifications)) {
     data.approval_notifications = [];
   }
+
+  if (!Array.isArray(data.password_change_requests)) {
+    data.password_change_requests = [];
+  }
+  data.password_change_requests = data.password_change_requests.map((request) => (
+    request.status === "pending" ? { ...request, status: "approved" } : request
+  ));
 
   if (!Array.isArray(data.assignments)) {
     data.assignments = [];
@@ -125,13 +156,26 @@ function normalizeDataShape() {
   }
 
   if (!Number.isFinite(Number(data.nextId))) {
-    data.nextId = data.students.length + data.callback_requests.length + data.approval_notifications.length + data.assignments.length + data.scheduled_classes.length + data.meetings.length + 1;
+    data.nextId = [...data.students, ...data.educators, ...data.staff_accounts].reduce((max, account) => Math.max(max, Number(account.id) || 0), 0) + 1;
   }
 
   data.students = data.students.map((student) => ({
     ...student,
     email: student.email || null
   }));
+  data.educators = data.educators.map((educator) => ({ ...educator, email: educator.email || null, role: "teacher" }));
+  data.staff_accounts = data.staff_accounts.map((account) => ({ ...account, email: account.email || null }));
+}
+
+function allAccounts() {
+  return [...data.students, ...data.educators, ...data.staff_accounts];
+}
+
+function accountCollectionForRole(role) {
+  const normalizedRole = String(role || "student").trim().toLowerCase();
+  if (normalizedRole === "teacher") return data.educators;
+  if (["admin", "supervisor", "engineer", "accounts"].includes(normalizedRole)) return data.staff_accounts;
+  return data.students;
 }
 
 function syncPrivilegedAccount({ role, fullName, phone, email, password }) {
@@ -140,8 +184,9 @@ function syncPrivilegedAccount({ role, fullName, phone, email, password }) {
     return null;
   }
 
-  const existingByRole = data.students.find((student) => String(student.role || "").trim().toLowerCase() === normalizedRole);
-  const existingByPhone = data.students.find((student) => String(student.phone || "").trim() === String(phone || "").trim());
+  const collection = accountCollectionForRole(normalizedRole);
+  const existingByRole = collection.find((student) => String(student.role || "").trim().toLowerCase() === normalizedRole);
+  const existingByPhone = allAccounts().find((student) => String(student.phone || "").trim() === String(phone || "").trim());
   const target = existingByRole || existingByPhone;
 
   if (target) {
@@ -180,7 +225,7 @@ function syncPrivilegedAccount({ role, fullName, phone, email, password }) {
     updated_at: new Date().toISOString()
   };
 
-  data.students.push(student);
+  collection.push(student);
   saveData();
   return student;
 }
@@ -198,7 +243,7 @@ function loadData() {
       const fileContent = fs.readFileSync(sourcePath, "utf-8");
       data = JSON.parse(fileContent);
       normalizeDataShape();
-      const legacyDemoStudent = data.students.find((student) => student.phone === "9871587344" && student.password === "demo-password");
+      const legacyDemoStudent = allAccounts().find((student) => student.phone === "9871587344" && student.password === "demo-password");
       if (legacyDemoStudent) {
         legacyDemoStudent.password = "Get2work";
         legacyDemoStudent.updated_at = new Date().toISOString();
@@ -253,7 +298,7 @@ export function query(sql, params = []) {
     // INSERT INTO students
     if (sqlUpper.startsWith("INSERT INTO STUDENTS")) {
       try {
-        const existing = data.students.find((s) => s.phone === params[1]);
+        const existing = allAccounts().find((s) => s.phone === params[1]);
         if (existing) {
           throw new Error("UNIQUE constraint failed: students.phone");
         }
@@ -266,7 +311,7 @@ export function query(sql, params = []) {
           role: params[4] || "student",
           created_at: new Date().toISOString()
         };
-        data.students.push(newStudent);
+        accountCollectionForRole(newStudent.role).push(newStudent);
         saveData();
         return {
           rows: [{ id: newStudent.id, created_at: newStudent.created_at }],
@@ -282,7 +327,7 @@ export function query(sql, params = []) {
       if (sqlUpper.includes("WHERE PHONE")) {
         const phone = params[0];
         const password = params[1];
-        const student = data.students.find(
+        const student = allAccounts().find(
           (s) => s.phone === phone && s.password === password
         );
         return {
@@ -290,7 +335,7 @@ export function query(sql, params = []) {
           rowCount: student ? 1 : 0
         };
       }
-      return { rows: data.students, rowCount: data.students.length };
+      return { rows: allAccounts(), rowCount: allAccounts().length };
     }
 
     // SELECT FROM callback_requests
@@ -318,6 +363,13 @@ export async function getDb() {
   return true;
 }
 
+function phoneIdentifiersMatch(left, right) {
+  const leftDigits = String(left || "").replace(/\D/g, "");
+  const rightDigits = String(right || "").replace(/\D/g, "");
+  if (!leftDigits || !rightDigits) return false;
+  return leftDigits === rightDigits || leftDigits.slice(-10) === rightDigits.slice(-10);
+}
+
 export function authenticateStudent(identifier, password) {
   const normalizedIdentifier = String(identifier || "").trim().toLowerCase();
   const normalizedPassword = String(password || "");
@@ -327,8 +379,8 @@ export function authenticateStudent(identifier, password) {
   }
 
   return (
-    data.students.find((student) => {
-      const phoneMatch = String(student.phone || "") === normalizedIdentifier;
+    allAccounts().find((student) => {
+      const phoneMatch = phoneIdentifiersMatch(student.phone, normalizedIdentifier);
       const nameMatch = String(student.full_name || "").trim().toLowerCase() === normalizedIdentifier;
       const emailMatch = String(student.email || "").trim().toLowerCase() === normalizedIdentifier;
       const isSupervisorLogin =
@@ -342,8 +394,17 @@ export function authenticateStudent(identifier, password) {
   );
 }
 
+export function findStudentByIdentifier(identifier) {
+  const normalizedIdentifier = String(identifier || "").trim().toLowerCase();
+  return allAccounts().find((student) => (
+    phoneIdentifiersMatch(student.phone, normalizedIdentifier) ||
+    String(student.full_name || "").trim().toLowerCase() === normalizedIdentifier ||
+    String(student.email || "").trim().toLowerCase() === normalizedIdentifier
+  )) || null;
+}
+
 export function listStudents() {
-  return data.students;
+  return allAccounts();
 }
 
 export function toPublicUser(user) {
@@ -363,7 +424,7 @@ export function toPublicUser(user) {
 
 function findUserById(id) {
   const numericId = Number(id);
-  return data.students.find((item) => Number(item.id) === numericId) || null;
+  return allAccounts().find((item) => Number(item.id) === numericId) || null;
 }
 
 function hydrateAssignment(row) {
@@ -581,7 +642,8 @@ export function createMeeting({
   hostId,
   studentIds = [],
   teacherIds = [],
-  createdBy = null
+  createdBy = null,
+  recurrence = "none"
 }) {
   const normalizedKind = String(kind || "o2o").toLowerCase() === "m2m" ? "m2m" : "o2o";
   const students = uniqueIds(studentIds).map(findUserById).filter((user) => String(user?.role || "").toLowerCase() === "student");
@@ -609,6 +671,7 @@ export function createMeeting({
     teacher_ids: teachers.map((user) => user.id),
     participant_ids: [...students, ...teachers].map((user) => user.id),
     status: "scheduled",
+    recurrence: ["weekly", "none"].includes(String(recurrence)) ? String(recurrence) : "none",
     created_by: createdBy ? String(createdBy).trim() : null,
     created_at: new Date().toISOString()
   };
@@ -755,7 +818,7 @@ export function createStudent({ fullName, phone, password, status = "approved", 
     throw new Error("MISSING_REQUIRED_FIELDS");
   }
 
-  const existing = data.students.find((student) => student.phone === normalizedPhone);
+  const existing = allAccounts().find((student) => phoneIdentifiersMatch(student.phone, normalizedPhone));
   if (existing) {
     throw new Error("UNIQUE constraint failed: students.phone");
   }
@@ -772,14 +835,14 @@ export function createStudent({ fullName, phone, password, status = "approved", 
     updated_at: new Date().toISOString()
   };
 
-  data.students.push(student);
+  accountCollectionForRole(normalizedRole).push(student);
   saveData();
   return student;
 }
 
 export function unlockStudent(phone) {
   const normalizedPhone = String(phone || "").trim();
-  const student = data.students.find((item) => item.phone === normalizedPhone);
+  const student = allAccounts().find((item) => phoneIdentifiersMatch(item.phone, normalizedPhone));
   if (!student) {
     return null;
   }
@@ -793,7 +856,7 @@ export function unlockStudent(phone) {
 export function updateStudentStatus(phone, status, reviewedBy = null) {
   const normalizedPhone = String(phone || "").trim();
   const normalizedStatus = String(status || "").trim().toLowerCase();
-  const student = data.students.find((item) => item.phone === normalizedPhone);
+  const student = allAccounts().find((item) => phoneIdentifiersMatch(item.phone, normalizedPhone));
   if (!student) {
     return null;
   }
@@ -832,6 +895,88 @@ export function listApprovalNotifications() {
   return data.approval_notifications;
 }
 
+export function createPasswordChangeRequest({ student, newPassword, otpHash, otpExpiresAt }) {
+  const request = {
+    id: data.nextId++,
+    student_id: student.id,
+    student_phone: student.phone,
+    student_name: student.full_name,
+    role: student.role,
+    new_password: String(newPassword || ""),
+    otp_hash: otpHash || null,
+    otp_expires_at: otpExpiresAt || null,
+    status: "approved",
+    created_at: new Date().toISOString(),
+    reviewed_at: null,
+    reviewed_by: null
+  };
+
+  data.password_change_requests.push(request);
+  saveData();
+  return request;
+}
+
+export function listPasswordChangeRequests() {
+  return data.password_change_requests.map(({ new_password, otp_hash, ...request }) => request);
+}
+
+export function completePasswordChangeRequest(id, otpHash, newPassword) {
+  const request = data.password_change_requests.find((item) => Number(item.id) === Number(id));
+  if (!request || request.status !== "approved") {
+    return { error: "REQUEST_NOT_APPROVED" };
+  }
+  if (!request.otp_hash || request.otp_hash !== otpHash) {
+    return { error: "INVALID_OTP" };
+  }
+  if (request.otp_expires_at && new Date(request.otp_expires_at).getTime() < Date.now()) {
+    return { error: "OTP_EXPIRED" };
+  }
+
+  const student = findUserById(request.student_id);
+  if (!student) {
+    return { error: "USER_NOT_FOUND" };
+  }
+  const normalizedPassword = String(newPassword || "");
+  if (normalizedPassword.length < 6) {
+    return { error: "PASSWORD_TOO_SHORT" };
+  }
+
+  student.password = normalizedPassword;
+  student.updated_at = new Date().toISOString();
+  request.status = "completed";
+  request.completed_at = new Date().toISOString();
+  request.otp_hash = null;
+  saveData();
+  return { student, request: { ...request, new_password: undefined, otp_hash: undefined } };
+}
+
+export function reviewPasswordChangeRequest(id, status, reviewedBy) {
+  const request = data.password_change_requests.find((item) => Number(item.id) === Number(id));
+  if (!request || request.status !== "pending") {
+    return null;
+  }
+
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+  if (!["approved", "denied"].includes(normalizedStatus)) {
+    return null;
+  }
+
+  if (normalizedStatus === "approved") {
+    const student = findUserById(request.student_id);
+    if (!student) {
+      return null;
+    }
+    student.password = request.new_password;
+    student.updated_at = new Date().toISOString();
+  }
+
+  request.status = normalizedStatus;
+  request.reviewed_at = new Date().toISOString();
+  request.reviewed_by = reviewedBy ? String(reviewedBy).trim() : null;
+  saveData();
+  return { ...request, new_password: undefined, otp_hash: undefined };
+}
+
 export function ensurePrivilegedAccounts() {
   const admin = syncPrivilegedAccount({
     role: "admin",
@@ -855,7 +1000,7 @@ export function ensurePrivilegedAccounts() {
 export function resetStudentPassword(phone, newPassword) {
   const normalizedPhone = String(phone || "").trim();
   const normalizedPassword = String(newPassword || "");
-  const student = data.students.find((item) => item.phone === normalizedPhone);
+  const student = allAccounts().find((item) => phoneIdentifiersMatch(item.phone, normalizedPhone));
   if (!student) {
     return null;
   }
@@ -870,7 +1015,7 @@ export function resetStudentPassword(phone, newPassword) {
   return student;
 }
 
-export function changeStudentPassword(phone, currentPassword, newPassword) {
+export function changeStudentPassword(phone, currentPassword, newPassword, options = {}) {
   const student = authenticateStudent(phone, currentPassword);
   if (!student) {
     throw new Error("INVALID_CURRENT_PASSWORD");
@@ -879,10 +1024,12 @@ export function changeStudentPassword(phone, currentPassword, newPassword) {
   if (normalizedPassword.length < 6) {
     throw new Error("PASSWORD_TOO_SHORT");
   }
-  student.password = normalizedPassword;
-  student.updated_at = new Date().toISOString();
-  saveData();
-  return student;
+  return createPasswordChangeRequest({
+    student,
+    newPassword: normalizedPassword,
+    otpHash: options.otpHash,
+    otpExpiresAt: options.otpExpiresAt
+  });
 }
 
 export function closeDb() {

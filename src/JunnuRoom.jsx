@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { SelfieSegmentation } from "@mediapipe/selfie_segmentation";
+import { Camera, ChevronDown, CircleEllipsis, Hand, LayoutPanelTop, Mic, MonitorUp, PhoneOff, SmilePlus, UsersRound, MessageCircle } from "lucide-react";
 import { applyBoardOp, currentPage, normalizeBoard } from "../shared/junnuBoard.js";
 
 const AUDIO_CONSTRAINTS = {
@@ -73,6 +75,15 @@ function paintBackground(ctx, width, height, kind) {
       ctx.stroke();
     }
   }
+}
+
+function paintVideoBackground(ctx, width, height, kind) {
+  const colors = kind === "dawn" ? ["#f97316", "#fef3c7"] : kind === "forest" ? ["#14532d", "#bbf7d0"] : ["#075985", "#a5f3fc"];
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, colors[0]);
+  gradient.addColorStop(1, colors[1]);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
 }
 
 function distance(a, b) {
@@ -169,6 +180,13 @@ function paintPage(canvas, page) {
   (page?.strokes || []).forEach((stroke) => paintStroke(ctx, stroke, width, height));
   (page?.shapes || []).forEach((shape) => paintShape(ctx, shape, width, height));
   (page?.texts || []).forEach((item) => {
+    if (item.sticky) {
+      const x = item.x * width;
+      const y = item.y * height;
+      const size = Math.max(16, (Number(item.size) || 18) * (width / 900));
+      ctx.fillStyle = "#fef08a";
+      ctx.fillRect(x - 12, y - size, Math.min(width * 0.28, Math.max(120, item.text.length * size * 0.6)), size * 1.55);
+    }
     ctx.fillStyle = item.color || "#111827";
     ctx.font = `${Math.max(16, (Number(item.size) || 18) * (width / 900))}px sans-serif`;
     ctx.fillText(item.text, item.x * width, item.y * height);
@@ -203,7 +221,7 @@ async function applyCrystalSenders(pc) {
   }
 }
 
-export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier, password, title }) {
+export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier, password, title, userRole, onLeave }) {
   const localVideoRef = useRef(null);
   const boardRef = useRef(null);
   const peerIdRef = useRef(`p-${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`}`);
@@ -211,9 +229,12 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
   const peersRef = useRef(new Map());
   const streamRef = useRef(null);
   const screenStreamRef = useRef(null);
+  const virtualStreamRef = useRef(null);
+  const videoBackgroundRef = useRef("none");
   const shareModeRef = useRef("camera");
   const sendBoardRef = useRef(async () => {});
   const sendControlRef = useRef(async () => {});
+  const sendChatRef = useRef(async () => {});
   const boardStateRef = useRef(normalizeBoard(null));
   const drawingRef = useRef(null);
   const laserTimerRef = useRef(null);
@@ -231,6 +252,17 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
   const [aiStatus, setAiStatus] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [shareMode, setShareMode] = useState("camera");
+  const [workspace, setWorkspace] = useState("video");
+  const [theme, setTheme] = useState("ocean");
+  const [videoBackground, setVideoBackground] = useState("none");
+  const [cameraReady, setCameraReady] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [videoEnabled, setVideoEnabled] = useState(true);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatText, setChatText] = useState("");
+  const [replyTo, setReplyTo] = useState(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [sharedFiles, setSharedFiles] = useState([]);
   const [presenter, setPresenter] = useState(null);
   const [boardMeta, setBoardMeta] = useState({
     pageIndex: 0,
@@ -239,12 +271,13 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
     canRedo: false,
     background: "white"
   });
+  const initials = String(displayName || "J").trim().split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 
   function syncLocalSenders(pc) {
     const cameraStream = streamRef.current;
     const screenStream = screenStreamRef.current;
     const activeStream = shareModeRef.current === "screen" && screenStream ? screenStream : cameraStream;
-    const activeVideo = activeStream?.getVideoTracks?.()[0] || null;
+    const activeVideo = (shareModeRef.current === "camera" ? virtualStreamRef.current?.getVideoTracks?.()[0] : null) || activeStream?.getVideoTracks?.()[0] || null;
     const activeAudio = cameraStream?.getAudioTracks?.()[0] || null;
     if (activeVideo) {
       const currentSender = pc.getSenders().find((sender) => sender.track?.kind === "video");
@@ -264,6 +297,25 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
     }
   }
 
+  function toggleAudio() {
+    const nextEnabled = !audioEnabled;
+    streamRef.current?.getAudioTracks().forEach((track) => {
+      track.enabled = nextEnabled;
+    });
+    setAudioEnabled(nextEnabled);
+  }
+
+  function toggleVideo() {
+    const nextEnabled = !videoEnabled;
+    streamRef.current?.getVideoTracks().forEach((track) => {
+      track.enabled = nextEnabled;
+    });
+    screenStreamRef.current?.getVideoTracks().forEach((track) => {
+      track.enabled = nextEnabled;
+    });
+    setVideoEnabled(nextEnabled);
+  }
+
   function syncMeta() {
     const board = boardStateRef.current;
     setBoardMeta({
@@ -274,6 +326,151 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
       background: currentPage(board).background || "white"
     });
   }
+
+  function applyChatMessage(message) {
+    if (message.type === "chat" && message.data?.id) {
+      setChatMessages((items) => items.some((item) => item.id === message.data.id) ? items : [...items, {
+        ...message.data,
+        from: message.from,
+        name: message.data.name || peersRef.current.get(message.from) || "Classmate"
+      }]);
+    }
+    if (message.type === "chat-reaction" && message.data?.messageId) {
+      setChatMessages((items) => items.map((item) => item.id !== message.data.messageId ? item : {
+        ...item,
+        reactions: {
+          ...(item.reactions || {}),
+          [message.data.emoji]: [...new Set([...(item.reactions?.[message.data.emoji] || []), message.from])]
+        }
+      }));
+    }
+    if (message.type === "file" && message.data?.id) {
+      setSharedFiles((items) => items.some((item) => item.id === message.data.id) ? items : [...items, message.data]);
+    }
+  }
+
+  async function shareFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || file.size > 6 * 1024 * 1024) {
+      return;
+    }
+    const data = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    });
+    const payload = await fetch(`${apiBaseUrl}/api/junnu/file`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier, password, roomId, file: { name: file.name, size: file.size, data } })
+    }).then((response) => response.json());
+    if (payload.file) {
+      setSharedFiles((items) => [...items, payload.file]);
+    }
+  }
+
+  function submitChat(event) {
+    event.preventDefault();
+    const text = chatText.trim();
+    if (!text) {
+      return;
+    }
+    const message = {
+      id: `chat-${peerIdRef.current}-${Date.now()}`,
+      text,
+      replyTo: replyTo?.id || null,
+      name: displayName
+    };
+    applyChatMessage({ type: "chat", from: peerIdRef.current, data: message });
+    sendChatRef.current("chat", message);
+    setChatText("");
+    setReplyTo(null);
+  }
+
+  useEffect(() => {
+    const cameraStream = streamRef.current;
+    if (!cameraStream || videoBackgroundRef.current === "none") {
+      virtualStreamRef.current?.getTracks().forEach((track) => track.stop());
+      virtualStreamRef.current = null;
+      if (localVideoRef.current && shareModeRef.current === "camera") {
+        localVideoRef.current.srcObject = cameraStream || null;
+      }
+      connectionsRef.current.forEach((item) => syncLocalSenders(item.pc));
+      return undefined;
+    }
+
+    const source = document.createElement("video");
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    let cancelled = false;
+    let frameId = 0;
+    let processing = false;
+    let lastFrameAt = 0;
+    const segmentation = new SelfieSegmentation({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`
+    });
+
+    segmentation.setOptions({ modelSelection: 1 });
+    segmentation.onResults((results) => {
+      if (cancelled || !context) {
+        return;
+      }
+      context.save();
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(results.segmentationMask, 0, 0, canvas.width, canvas.height);
+      context.globalCompositeOperation = "source-in";
+      context.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+      context.globalCompositeOperation = "destination-atop";
+      paintVideoBackground(context, canvas.width, canvas.height, videoBackgroundRef.current);
+      context.restore();
+    });
+
+    source.srcObject = cameraStream;
+    source.muted = true;
+    source.playsInline = true;
+    source.play().then(() => {
+      if (cancelled) {
+        return;
+      }
+      const sourceWidth = source.videoWidth || 1280;
+      const sourceHeight = source.videoHeight || 720;
+      canvas.width = Math.min(sourceWidth, 640);
+      canvas.height = Math.round(canvas.width * sourceHeight / sourceWidth);
+      const virtualStream = canvas.captureStream(15);
+      virtualStreamRef.current = virtualStream;
+      if (localVideoRef.current && shareModeRef.current === "camera") {
+        localVideoRef.current.srcObject = virtualStream;
+      }
+      connectionsRef.current.forEach((item) => syncLocalSenders(item.pc));
+      const render = async (timestamp) => {
+        if (cancelled) {
+          return;
+        }
+        if (!processing && timestamp - lastFrameAt >= 66) {
+          processing = true;
+          lastFrameAt = timestamp;
+          try {
+            await segmentation.send({ image: source });
+          } catch (_error) {
+          } finally {
+            processing = false;
+          }
+        }
+        frameId = requestAnimationFrame(render);
+      };
+      frameId = requestAnimationFrame(render);
+    }).catch(() => {});
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frameId);
+      segmentation.close();
+      virtualStreamRef.current?.getTracks().forEach((track) => track.stop());
+      virtualStreamRef.current = null;
+      connectionsRef.current.forEach((item) => syncLocalSenders(item.pc));
+    };
+  }, [cameraReady, videoBackground === "none"]);
 
   function redraw() {
     paintPage(boardRef.current, currentPage(boardStateRef.current));
@@ -376,6 +573,10 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(`Junnu server returned an invalid response (${response.status}).`);
+      }
       const payload = await response.json();
       if (!response.ok || payload?.ok === false) {
         throw new Error(payload?.message || "Junnu request failed.");
@@ -406,6 +607,7 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
 
     sendBoardRef.current = (data) => sendSignal("*", "board", data);
     sendControlRef.current = (data) => sendSignal("*", "presenter", data);
+    sendChatRef.current = (type, data) => sendSignal("*", type, data);
 
     function attachLocal(pc) {
       const stream = streamRef.current;
@@ -496,6 +698,10 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
           return;
         }
         applyLocalOp(message.data);
+        return;
+      }
+      if (["chat", "chat-reaction", "file"].includes(message.type)) {
+        applyChatMessage(message);
         return;
       }
       if (message.type === "leave") {
@@ -627,6 +833,7 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
           track.contentHint = "detail";
         });
         streamRef.current = stream;
+        setCameraReady(true);
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
@@ -646,6 +853,8 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
       boardStateRef.current = normalizeBoard(joined.board);
       setSnapshots(joined.snapshots || []);
       setPresenter(joined.presenter || null);
+      setChatMessages(joined.chat || []);
+      setSharedFiles(joined.files || []);
       redraw();
       setStatus(joined.peers?.length ? "Connecting Junnu HD…" : "Waiting for the other person to join Junnu…");
       openSocket();
@@ -744,8 +953,8 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
     }
     event.preventDefault();
     const point = pointFromEvent(event, canvas);
-    if (tool === "text") {
-      setTextDraft({ ...point, value: "" });
+    if (tool === "text" || tool === "sticky") {
+      setTextDraft({ ...point, value: "", sticky: tool === "sticky" });
       return;
     }
     if (tool === "laser") {
@@ -845,7 +1054,7 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
       return;
     }
     const op = {
-      action: "text",
+      action: draft.sticky ? "sticky" : "text",
       id: `t-${peerIdRef.current}-${Date.now()}`,
       x: draft.x,
       y: draft.y,
@@ -949,6 +1158,10 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
           image: renderPageDataUrl(page)
         })
       });
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(`Junnu server returned an invalid response (${response.status}).`);
+      }
       const payload = await response.json();
       if (payload?.snapshots) {
         setSnapshots(payload.snapshots);
@@ -959,47 +1172,76 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
   }
 
   return (
-    <div className="junnu-stage">
-      <p className="junnu-status-banner">{status}</p>
-      <aside className="junnu-filmstrip" aria-label="Live cameras">
-        <figure className="junnu-pip-card junnu-pip-card--self">
-          <video ref={localVideoRef} autoPlay muted playsInline />
-          <figcaption>You · {displayName}{presenter?.peerId === peerIdRef.current ? <span className="junnu-presenter-badge">Presenter</span> : null}</figcaption>
-        </figure>
-        {remoteTiles.length ? remoteTiles.map((tile) => (
-          <figure key={tile.peerId} className="junnu-pip-card">
-            <video id={`junnu-remote-${tile.peerId}`} autoPlay playsInline />
-            <figcaption>{tile.name}{presenter?.peerId === tile.peerId ? <span className="junnu-presenter-badge">Presenter</span> : null}</figcaption>
+    <div className={`junnu-stage junnu-stage--teams junnu-stage--${theme}`}>
+      <header className="junnu-call-header">
+        <div><strong>{title || "Junnu class"}</strong><span>{status}</span></div>
+        <div className="junnu-header-tools">
+          <button type="button" title="People"><UsersRound size={19} /><span>People</span></button>
+          <button className={chatOpen ? "active" : ""} type="button" title="Chat" onClick={() => setChatOpen((open) => !open)}><MessageCircle size={19} /><span>Chat</span></button>
+          <button type="button" title="Raise hand"><Hand size={19} /><span>Raise</span></button>
+          <button type="button" title="React"><SmilePlus size={19} /><span>React</span></button>
+          <button type="button" title="View"><LayoutPanelTop size={19} /><span>View</span></button>
+          <button type="button" title="More options"><CircleEllipsis size={19} /><span>More</span></button>
+        </div>
+      </header>
+      {workspace === "video" ? <div className={`junnu-call-body${chatOpen ? " has-chat" : ""}`}>
+        <section className="junnu-video-canvas" aria-label="Live cameras">
+          {remoteTiles.length ? remoteTiles.map((tile) => (
+            <figure key={tile.peerId} className="junnu-main-video">
+              <video id={`junnu-remote-${tile.peerId}`} autoPlay playsInline />
+              <figcaption>{tile.name}{presenter?.peerId === tile.peerId ? <span className="junnu-presenter-badge">Presenter</span> : null}</figcaption>
+            </figure>
+          )) : (
+            <div className="junnu-waiting-state"><span>{initials}</span><strong>Waiting for others to join...</strong></div>
+          )}
+          <figure className="junnu-self-preview">
+            <video ref={localVideoRef} autoPlay muted playsInline />
+            <figcaption>You · {displayName}</figcaption>
           </figure>
-        )) : (
-          <p className="junnu-pip-wait">Waiting for the other person…</p>
-        )}
-      </aside>
-      <div className="junnu-board-pane">
+          <div className="junnu-media-dock">
+            <button className={!videoEnabled ? "is-off" : ""} type="button" title={videoEnabled ? "Stop camera" : "Start camera"} onClick={toggleVideo}><Camera size={20} /><span>Camera</span><ChevronDown size={13} /></button>
+            <button className={!audioEnabled ? "is-off" : ""} type="button" title={audioEnabled ? "Mute microphone" : "Unmute microphone"} onClick={toggleAudio}><Mic size={20} /><span>Mic</span><ChevronDown size={13} /></button>
+            <button className={shareMode === "screen" ? "is-on" : ""} type="button" title="Share screen" onClick={toggleScreenShare}><MonitorUp size={20} /><span>Share</span></button>
+            <button type="button" title="Background options"><label><span>Background</span><select value={videoBackground} onChange={(event) => { videoBackgroundRef.current = event.target.value; setVideoBackground(event.target.value); }}><option value="none">None</option><option value="ocean">Ocean</option><option value="dawn">Dawn</option><option value="forest">Forest</option></select></label></button>
+            {["student", "teacher"].includes(String(userRole || "").toLowerCase()) ? <button type="button" title="Open digital notes" onClick={() => setWorkspace("notes")}><LayoutPanelTop size={20} /><span>Notes</span></button> : null}
+            <button className="junnu-leave-control" type="button" title="Leave meeting" onClick={onLeave}><PhoneOff size={21} /><span>Leave</span></button>
+          </div>
+        </section>
+      {chatOpen ? <section className="junnu-chat" aria-label="Meeting chat">
+        <div className="junnu-chat-header"><strong>Chat</strong>{replyTo ? <button type="button" onClick={() => setReplyTo(null)}>Cancel reply</button> : null}</div>
+        <div className="junnu-chat-list">
+          {chatMessages.map((message) => (
+            <article className="junnu-chat-message" key={message.id}>
+              <strong>{message.name}</strong>
+              {message.replyTo ? <span className="junnu-chat-reply">Replying to a message</span> : null}
+              <p>{message.text}</p>
+              <div className="junnu-chat-actions">
+                <button type="button" onClick={() => setReplyTo(message)}>Reply</button>
+                {["👍", "❤️", "😂"].map((emoji) => <button key={emoji} type="button" onClick={() => sendChatRef.current("chat-reaction", { messageId: message.id, emoji })}>{emoji}{message.reactions?.[emoji]?.length ? ` ${message.reactions[emoji].length}` : ""}</button>)}
+              </div>
+            </article>
+          ))}
+        </div>
+        <form className="junnu-chat-compose" onSubmit={submitChat}>
+          <input value={chatText} onChange={(event) => setChatText(event.target.value)} placeholder={replyTo ? `Reply to ${replyTo.name}` : "Message everyone"} maxLength="1200" />
+          <button type="submit">Send</button>
+        </form>
+        <div className="junnu-files">
+          <label>Share file<input type="file" onChange={shareFile} /></label>
+          {sharedFiles.map((file) => <a key={file.id} href={file.url} target="_blank" rel="noreferrer">{file.name}</a>)}
+        </div>
+      </section> : null}</div> : null}
+      {workspace === "notes" ? <div className="junnu-board-pane">
+        <div className="junnu-notes-header"><button type="button" onClick={() => setWorkspace("video")}>Back to video</button><label>Theme<select value={theme} onChange={(event) => setTheme(event.target.value)}><option value="ocean">Ocean</option><option value="dawn">Dawn</option><option value="forest">Forest</option></select></label></div>
         <div className="junnu-board-tools">
           <strong>Whiteboard</strong>
           <button type="button" disabled={!boardMeta.canUndo} onClick={() => emit({ action: "undo" })}>Undo</button>
           <button type="button" disabled={!boardMeta.canRedo} onClick={() => emit({ action: "redo" })}>Redo</button>
-          <button className={shareMode === "screen" ? "active" : ""} type="button" onClick={toggleScreenShare}>{shareMode === "screen" ? "Stop share" : "Share screen"}{presenter ? ` · ${presenter.name} presenting` : ""}</button>
-          <button className={shareMode === "camera" ? "active" : ""} type="button" onClick={() => {
-            if (screenStreamRef.current) {
-              screenStreamRef.current.getTracks().forEach((track) => track.stop());
-              screenStreamRef.current = null;
-            }
-            shareModeRef.current = "camera";
-            setShareMode("camera");
-            setPresenter(null);
-            sendControlRef.current({ active: false });
-            if (localVideoRef.current) {
-              localVideoRef.current.srcObject = streamRef.current || null;
-            }
-            connectionsRef.current.forEach((item) => syncLocalSenders(item.pc));
-            setStatus("Camera is active again.");
-          }}>Camera</button>
           <button className={tool === "pen" ? "active" : ""} type="button" onClick={() => setTool("pen")}>Pen</button>
           <button className={tool === "highlight" ? "active" : ""} type="button" onClick={() => setTool("highlight")}>Highlight</button>
           <button className={tool === "erase" ? "active" : ""} type="button" onClick={() => setTool("erase")}>Eraser</button>
           <button className={tool === "text" ? "active" : ""} type="button" onClick={() => setTool("text")}>Text</button>
+          <button className={tool === "sticky" ? "active" : ""} type="button" onClick={() => setTool("sticky")}>Sticky note</button>
           <button className={tool === "line" ? "active" : ""} type="button" onClick={() => setTool("line")}>Line</button>
           <button className={tool === "rect" ? "active" : ""} type="button" onClick={() => setTool("rect")}>Box</button>
           <button className={tool === "ellipse" ? "active" : ""} type="button" onClick={() => setTool("ellipse")}>Circle</button>
@@ -1064,7 +1306,7 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
             ))}
           </div>
         ) : null}
-      </div>
+      </div> : null}
     </div>
   );
 }

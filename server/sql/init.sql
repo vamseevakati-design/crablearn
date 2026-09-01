@@ -1,11 +1,85 @@
+CREATE TABLE IF NOT EXISTS countries (
+  country_code VARCHAR(2) PRIMARY KEY,
+  country_name VARCHAR(100) NOT NULL,
+  phone_code VARCHAR(10),
+  currency_code VARCHAR(10)
+);
+
 CREATE TABLE IF NOT EXISTS students (
-  id SERIAL PRIMARY KEY,
+  student_id SERIAL PRIMARY KEY,
   full_name TEXT NOT NULL,
   phone TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL,
+  email TEXT UNIQUE,
+  country_code VARCHAR(2) REFERENCES countries(country_code),
   status TEXT NOT NULL DEFAULT 'approved',
-  role TEXT NOT NULL DEFAULT 'student',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS educators (
+  educator_id SERIAL PRIMARY KEY,
+  full_name TEXT NOT NULL,
+  phone TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL,
+  email TEXT UNIQUE,
+  country_code VARCHAR(2) REFERENCES countries(country_code),
+  specialization TEXT,
+  qualification TEXT,
+  status TEXT NOT NULL DEFAULT 'approved',
+  salary_per_hour NUMERIC(10,2),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS staff_accounts (
+  staff_id SERIAL PRIMARY KEY,
+  full_name TEXT NOT NULL,
+  phone TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL,
+  email TEXT UNIQUE,
+  role TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'approved',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS student_educator_map (
+  id SERIAL PRIMARY KEY,
+  student_id INT NOT NULL REFERENCES students(student_id),
+  educator_id INT NOT NULL REFERENCES educators(educator_id),
+  subject_name VARCHAR(100),
+  class_type VARCHAR(20),
+  start_date DATE,
+  end_date DATE,
+  status VARCHAR(20) NOT NULL DEFAULT 'ongoing'
+);
+
+CREATE TABLE IF NOT EXISTS class_schedule (
+  class_id SERIAL PRIMARY KEY,
+  educator_id INT NOT NULL REFERENCES educators(educator_id),
+  student_id INT NOT NULL REFERENCES students(student_id),
+  subject_name VARCHAR(100),
+  class_type VARCHAR(20),
+  start_time TIMESTAMP,
+  end_time TIMESTAMP,
+  location VARCHAR(150),
+  status VARCHAR(20) NOT NULL DEFAULT 'scheduled',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+  payment_id SERIAL PRIMARY KEY,
+  student_id INT REFERENCES students(student_id),
+  educator_id INT REFERENCES educators(educator_id),
+  class_id INT REFERENCES class_schedule(class_id),
+  amount NUMERIC(10,2),
+  currency VARCHAR(10),
+  payment_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  payment_method VARCHAR(20),
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  transaction_reference VARCHAR(100) UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS callback_requests (
@@ -58,6 +132,6 @@ INSERT INTO students (full_name, phone, password, status)
 VALUES ('Tanisha Vakati', '9871587344', 'demo-password', 'approved')
 ON CONFLICT (phone) DO NOTHING;
 
-INSERT INTO students (full_name, phone, password, status, role)
+INSERT INTO staff_accounts (full_name, phone, password, status, role)
 VALUES ('Admin', '9000000000', 'admin@123', 'approved', 'admin')
 ON CONFLICT (phone) DO NOTHING;

@@ -156,6 +156,20 @@ export function applyBoardOp(board, data) {
     return next;
   }
 
+  if (op.action === "sticky" && op.id) {
+    pushUndo(next);
+    page().texts.push({
+      id: op.id,
+      x: Number(op.x) || 0,
+      y: Number(op.y) || 0,
+      text: String(op.text || "").slice(0, 240),
+      color: op.color || "#1c1917",
+      size: Number(op.size) || 18,
+      sticky: true
+    });
+    return next;
+  }
+
   if (op.action === "shape-start" && op.id) {
     pushUndo(next);
     page().shapes.push({

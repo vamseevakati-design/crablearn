@@ -20,7 +20,7 @@ export function isAllowedJunnuRoomActor(actor, roomId) {
     return true;
   }
   const roomKey = String(roomId || "").trim();
-  const sessions = getClassesForUser(actor) || [];
+  const sessions = getClassesForUser(actor)?.sessions || [];
   for (const session of sessions) {
     const directId = session?.meeting_id || session?.id;
     if (!directId) {
@@ -71,6 +71,8 @@ function getRoom(roomId) {
     rooms.set(id, {
       peers: new Map(),
       signals: [],
+      chat: [],
+      files: [],
       nextSignal: 1,
       presenter: null,
       board: normalizeBoard(loadJunnuBoard(id) || emptyBoard())
@@ -167,6 +169,8 @@ export function junnuJoin({ roomId, peerId, name }) {
     after: live.nextSignal - 1,
     presenter: live.presenter,
     board: live.board,
+    chat: live.chat,
+    files: live.files,
     snapshots: listJunnuSnapshots(roomId)
   };
 }
@@ -193,6 +197,40 @@ export function junnuSignal({ roomId, from, to, type, data }) {
   if (type === "board" && data?.action !== "laser") {
     room.board = applyBoardOp(room.board, data);
     persistBoard(roomId, room.board);
+  }
+  if (type === "chat" && String(data?.text || "").trim()) {
+    room.chat.push({
+      id: String(data.id || `${from}-${Date.now()}`),
+      from,
+      name: peer?.name || "Classmate",
+      text: String(data.text).trim().slice(0, 1200),
+      replyTo: data.replyTo ? String(data.replyTo) : null,
+      reactions: {}
+    });
+    if (room.chat.length > 200) {
+      room.chat.shift();
+    }
+  }
+  if (type === "chat-reaction" && data?.messageId && data?.emoji) {
+    const chat = room.chat.find((item) => item.id === String(data.messageId));
+    if (chat) {
+      const emoji = String(data.emoji).slice(0, 8);
+      chat.reactions[emoji] = [...new Set([...(chat.reactions[emoji] || []), from])];
+    }
+  }
+  if (type === "file" && data?.id && data?.url) {
+    room.files.push({
+      id: String(data.id),
+      name: String(data.name || "Shared file").slice(0, 180),
+      url: String(data.url),
+      type: String(data.type || "application/octet-stream"),
+      size: Number(data.size) || 0,
+      from,
+      nameBy: peer?.name || "Classmate"
+    });
+    if (room.files.length > 50) {
+      room.files.shift();
+    }
   }
   const message = {
     id: room.nextSignal++,
@@ -233,7 +271,8 @@ export function junnuPoll({ roomId, peerId, after }) {
     iceServers: iceServers(),
     board: live.board,
     presenter: live.presenter,
-    snapshots: listJunnuSnapshots(roomId)
+    snapshots: listJunnuSnapshots(roomId),
+    files: live.files
   };
 }
 

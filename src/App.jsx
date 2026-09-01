@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import AccountsPage from "./AccountsPage";
 import ErrorBoundary from "./ErrorBoundary";
 import JunnuRoom from "./JunnuRoom";
+import NotificationInbox from "./NotificationInbox";
 
 const subjectGroups = [
   {
@@ -412,6 +413,35 @@ const teacherPhoneRoleOverrides = {
   "9787001217": "teacher"
 };
 
+const countryCodes = [
+  { value: "+91", label: "IN +91" },
+  { value: "+1", label: "US +1" },
+  { value: "+44", label: "UK +44" },
+  { value: "+61", label: "AU +61" },
+  { value: "+971", label: "AE +971" }
+];
+
+function addCountryCode(identifier, countryCode) {
+  const value = String(identifier || "").trim();
+  if (!value || value.includes("@") || /[a-z]/i.test(value)) return value;
+  const digits = value.replace(/\D/g, "");
+  return digits ? `${countryCode || "+91"}${digits}` : value;
+}
+
+function CountryPhoneField({ id, label, name, value, defaultValue, onChange, placeholder }) {
+  return (
+    <>
+      <label htmlFor={id}>{label}<span>*</span></label>
+      <div className="country-phone-field">
+        <select name="countryCode" defaultValue="+91" aria-label="Country code">
+          {countryCodes.map((country) => <option key={country.value} value={country.value}>{country.label}</option>)}
+        </select>
+        <input id={id} name={name} type="text" value={value} defaultValue={value === undefined ? defaultValue : undefined} onChange={onChange} placeholder={placeholder} required />
+      </div>
+    </>
+  );
+}
+
 const signInRoutes = {
   student: "/Student portal",
   teacher: "/Teacher portal",
@@ -591,12 +621,46 @@ function SessionJoinControls({ session, onJoin, joinLabel = "Join", role = "", n
           {state.joinLabel || joinLabel}
         </button>
       ) : null}
+      <button
+        className="button portal-button blue"
+        type="button"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          downloadCalendarEvent(session);
+        }}
+      >
+        Calendar
+      </button>
     </span>
   );
 }
 
 function junnuRoomId(session) {
   return `${MEET_PRODUCT}-${session?.meeting_id || session?.id}`;
+}
+
+function downloadCalendarEvent(session) {
+  const start = new Date(session.starts_at);
+  const end = new Date(start.getTime() + Number(session.duration_min || 45) * 60000);
+  const stamp = (date) => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const content = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "BEGIN:VEVENT",
+    `UID:junnu-${session.meeting_id || session.id}@crablearn`,
+    `DTSTART:${stamp(start)}`,
+    `DTEND:${stamp(end)}`,
+    `SUMMARY:${String(session.title || session.subject || "Junnu class").replace(/[,;]/g, " ")}`,
+    `DESCRIPTION:Join Junnu: ${session.join_url || ""}`,
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(new Blob([content], { type: "text/calendar" }));
+  link.download = "junnu-meeting.ics";
+  link.click();
+  URL.revokeObjectURL(link.href);
 }
 
 function toMeetingStartIso(localValue) {
@@ -630,6 +694,7 @@ function App() {
   const [homeSlide, setHomeSlide] = useState(0);
   const [homeSlidePaused, setHomeSlidePaused] = useState(false);
   const [showAuthPassword, setShowAuthPassword] = useState(false);
+  const [passwordRequestId, setPasswordRequestId] = useState("");
   const whyViewportRef = useRef(null);
   const sessionPasswordRef = useRef("");
   const [currentUser, setCurrentUser] = useState(null);
@@ -640,6 +705,8 @@ function App() {
   const [meetingTitle, setMeetingTitle] = useState("");
   const [meetingStart, setMeetingStart] = useState("");
   const [meetingDuration, setMeetingDuration] = useState("45");
+  const [meetingRecurrence, setMeetingRecurrence] = useState("none");
+  const [meetingOccurrences, setMeetingOccurrences] = useState("4");
   const [meetingStudentId, setMeetingStudentId] = useState("");
   const [meetingTeacherId, setMeetingTeacherId] = useState("");
   const [meetingStudentIds, setMeetingStudentIds] = useState([]);
@@ -653,6 +720,8 @@ function App() {
   const [adminActionMessage, setAdminActionMessage] = useState("Admin actions require password verification.");
   const [adminUsersLoading, setAdminUsersLoading] = useState(false);
   const [adminUsers, setAdminUsers] = useState([]);
+  const [passwordChangeRequests, setPasswordChangeRequests] = useState([]);
+  const [auditFilter, setAuditFilter] = useState("all");
   const [approvalContacts, setApprovalContacts] = useState({
     admin: {
       phone: "+919787001217",
@@ -667,6 +736,9 @@ function App() {
   const [rowActionStatus, setRowActionStatus] = useState({});
   const directoryStudents = adminUsers.filter((user) => String(user.role || "").toLowerCase() === "student" && String(user.status || "").toLowerCase() === "approved");
   const directoryTeachers = adminUsers.filter((user) => String(user.role || "").toLowerCase() === "teacher" && String(user.status || "").toLowerCase() === "approved");
+  const pendingEducators = adminUsers.filter((user) => String(user.role || "").toLowerCase() === "teacher" && String(user.status || "").toLowerCase() === "pending");
+  const pendingStudents = adminUsers.filter((user) => String(user.role || "").toLowerCase() === "student" && String(user.status || "").toLowerCase() === "pending");
+  const pendingPasswordRequests = passwordChangeRequests.filter((request) => String(request.status || "").toLowerCase() === "pending");
   const educatorStudents = mappedRoster
     .map((item) => item.student)
     .filter((person, index, list) => person && list.findIndex((row) => Number(row.id) === Number(person.id)) === index);
@@ -955,7 +1027,7 @@ function App() {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(event.currentTarget);
-    const phone = String(formData.get("phone") || loginIdentifier || "").trim();
+    const phone = addCountryCode(String(formData.get("phone") || loginIdentifier || "").trim(), String(formData.get("countryCode") || "+91"));
     const password = String(formData.get("password") || "");
 
     try {
@@ -1029,19 +1101,29 @@ function App() {
   async function handleChangePassword(event) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const identifier = String(formData.get("identifier") || "").trim();
+    const identifier = addCountryCode(String(formData.get("identifier") || "").trim(), String(formData.get("countryCode") || "+91"));
     const currentPassword = String(formData.get("currentPassword") || "");
     const newPassword = String(formData.get("newPassword") || "");
     try {
-      const response = await fetch(`${apiBaseUrl}/api/auth/change-password`, {
+      const endpoint = passwordRequestId ? "/api/auth/change-password/complete" : "/api/auth/change-password";
+      const body = passwordRequestId
+        ? { requestId: passwordRequestId, otp: currentPassword, newPassword }
+        : { identifier, newPassword };
+      const response = await fetch(`${apiBaseUrl}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, currentPassword, newPassword })
+        body: JSON.stringify(body)
       });
       const payload = await response.json();
       setLoginMessage(payload.message || (response.ok ? "Password changed." : "Could not change password."));
       if (response.ok && payload.ok) {
-        setAuthMode("login");
+        if (payload.requestId) {
+          setPasswordRequestId(String(payload.requestId));
+          setAuthMode("change-password");
+        } else {
+          setPasswordRequestId("");
+          setAuthMode("login");
+        }
       }
     } catch (_error) {
       setLoginMessage("Password service is unavailable. Please try again.");
@@ -1052,7 +1134,7 @@ function App() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const fullName = String(formData.get("fullName") || "");
-    const phone = String(formData.get("phone") || "");
+    const phone = addCountryCode(String(formData.get("phone") || ""), String(formData.get("countryCode") || "+91"));
     const password = String(formData.get("password") || "");
 
     try {
@@ -1160,6 +1242,7 @@ function App() {
       if (Array.isArray(result.assignments)) {
         setMappedRoster(result.assignments);
       }
+      setPasswordChangeRequests(Array.isArray(result.passwordChangeRequests) ? result.passwordChangeRequests : []);
       if (result.approvalContacts?.admin || result.approvalContacts?.supervisor) {
         setApprovalContacts({
           admin: {
@@ -1272,6 +1355,8 @@ function App() {
           kind: meetingKind,
           startsAt,
           durationMin: Number(meetingDuration),
+          recurrence: meetingRecurrence,
+          occurrences: Number(meetingOccurrences),
           platform: MEET_PRODUCT,
           studentIds,
           teacherIds
@@ -1292,6 +1377,7 @@ function App() {
       setMeetingTeacherId("");
       setMeetingStudentIds([]);
       setMeetingTeacherIds([]);
+      setMeetingRecurrence("none");
     } catch (_error) {
       setMeetingMessage("Meeting service is unavailable. Restart the API and try again.");
     }
@@ -1366,6 +1452,13 @@ function App() {
         ...prev,
         [safePhone]: { type: "error", message: "Reset failed. Check admin credentials and try again." }
       }));
+    }
+  }
+
+  async function handleReviewPasswordRequest(requestId, decision) {
+    const result = await runAdminAction(`/api/admin/password-change-requests/${encodeURIComponent(requestId)}/${decision}`, {});
+    if (result?.ok) {
+      await handleAdminListUsers();
     }
   }
 
@@ -1491,6 +1584,7 @@ function App() {
   function goToEducatorAuth(mode = "login") {
     setSignInRole("teacher");
     setAuthMode(mode);
+    if (mode === "login") setPasswordRequestId("");
     setShowAuthPassword(false);
     goToPublicScreen("educator-login", "/educator-login");
   }
@@ -1510,6 +1604,7 @@ function App() {
   function goToStudentJoin() {
     setSignInRole("student");
     setAuthMode("login");
+    setPasswordRequestId("");
     setShowAuthPassword(false);
     goToPublicScreen("join-student", "/join-student");
   }
@@ -1582,6 +1677,12 @@ function App() {
         <input id="scheduleMeetingStart" type="datetime-local" value={meetingStart} onChange={(event) => setMeetingStart(event.target.value)} required />
         <label htmlFor="scheduleMeetingDuration">Minutes</label>
         <input id="scheduleMeetingDuration" type="number" min="15" step="15" value={meetingDuration} onChange={(event) => setMeetingDuration(event.target.value)} />
+        <label htmlFor="scheduleMeetingRecurrence">Repeat</label>
+        <select id="scheduleMeetingRecurrence" value={meetingRecurrence} onChange={(event) => setMeetingRecurrence(event.target.value)}>
+          <option value="none">Does not repeat</option>
+          <option value="weekly">Weekly</option>
+        </select>
+        {meetingRecurrence === "weekly" ? <><label htmlFor="scheduleMeetingOccurrences">Occurrences</label><input id="scheduleMeetingOccurrences" type="number" min="2" max="52" value={meetingOccurrences} onChange={(event) => setMeetingOccurrences(event.target.value)} /></> : null}
         {meetingKind === "o2o" ? (
           <>
             <label htmlFor="scheduleMeetingStudent">Student</label>
@@ -1757,6 +1858,7 @@ function App() {
               </a>
             ) : null}
             {currentUser ? <div className="session-pill">{roleLabel} signed in</div> : null}
+            {currentUser ? <NotificationInbox subscriber={currentUser} /> : null}
             {!currentUser && showPublicPage ? (
               <button className="login-register-btn" type="button" onClick={handleSignInToggle} aria-haspopup="dialog" aria-expanded={signInMenuOpen} data-testid="signin-trigger">
                 Login/Register
@@ -2298,16 +2400,14 @@ function App() {
             <div className="edu-auth-form">
               {authMode === "change-password" ? (
                 <>
-                  <h2>Change student password</h2>
-                  <p className="edu-legal">Enter your current password to set a new one.</p>
+                  <h2>Change educator password</h2>
+                  <p className="edu-legal">{passwordRequestId ? "Enter the one-time password sent to you to finish updating your password." : "Choose a new password, then submit your account identifier for OTP verification."}</p>
                   <form className="edu-underline-form" onSubmit={handleChangePassword}>
-                    <label htmlFor="studentChangeId">Username or phone<span>*</span></label>
-                    <input id="studentChangeId" name="identifier" type="text" defaultValue={loginIdentifier} required />
-                    <label htmlFor="studentCurrentPassword">Current password<span>*</span></label>
-                    <input id="studentCurrentPassword" name="currentPassword" type="password" required />
-                    <label htmlFor="studentNewPassword">New password<span>*</span></label>
-                    <input id="studentNewPassword" name="newPassword" type="password" minLength="6" required />
-                    <button className="button coral student-login-btn" type="submit">Change password</button>
+                    <CountryPhoneField id="educatorChangeId" name="identifier" label="Username or phone" defaultValue={loginIdentifier} placeholder="Mobile number or username" />
+                    {passwordRequestId ? <><label htmlFor="educatorCurrentPassword">One-time password<span>*</span></label><input id="educatorCurrentPassword" name="currentPassword" type="text" inputMode="numeric" autoComplete="one-time-code" required /></> : null}
+                    <label htmlFor="educatorNewPassword">New password<span>*</span></label>
+                    <input id="educatorNewPassword" name="newPassword" type="password" minLength="6" required />
+                    <button className="button coral student-login-btn" type="submit">{passwordRequestId ? "Update password" : "Send OTP"}</button>
                   </form>
                   <p className="student-switch"><button type="button" onClick={() => setAuthMode("login")}>Back to log in</button></p>
                 </>
@@ -2324,15 +2424,7 @@ function App() {
                   <p className="edu-or">or</p>
                   <form className="edu-underline-form" onSubmit={handleLoginSubmit}>
                     <label htmlFor="educatorAuthId">Username<span>*</span></label>
-                    <input
-                      id="educatorAuthId"
-                      name="phone"
-                      type="text"
-                      value={loginIdentifier}
-                      onChange={(event) => setLoginIdentifier(event.target.value)}
-                      placeholder="Your email, registration number, or mobile number"
-                      required
-                    />
+                    <CountryPhoneField id="educatorAuthId" name="phone" label="Username or phone" value={loginIdentifier} onChange={(event) => setLoginIdentifier(event.target.value)} placeholder="Email, username, or mobile number" />
                     <label htmlFor="educatorAuthPassword">Password<span>*</span></label>
                     <div className="edu-password-row">
                       <input
@@ -2353,7 +2445,8 @@ function App() {
                     <button className="button coral student-login-btn" type="submit">Log in</button>
                   </form>
                   <p className="edu-legal">By clicking Continue or Sign up, you agree to Crab Learn Terms of Use and Privacy Policy.</p>
-                  <button className="edu-link" type="button" onClick={() => setAuthMode("change-password")}>Change password</button>
+                  <button className="edu-link" type="button" onClick={() => { setPasswordRequestId(""); setAuthMode("change-password"); }}>Forgot Password?</button>
+                  <button className="edu-link" type="button" onClick={() => { setPasswordRequestId(""); setAuthMode("change-password"); }}>Change password</button>
                   <p className="student-switch">Don't have an account? <button type="button" onClick={() => setAuthMode("register")}>Sign up</button></p>
                 </>
               ) : (
@@ -2370,8 +2463,7 @@ function App() {
                   <form className="edu-underline-form" onSubmit={handleRegisterSubmit}>
                     <label htmlFor="educatorAuthName">Full name<span>*</span></label>
                     <input id="educatorAuthName" name="fullName" type="text" placeholder="Your full name" required />
-                    <label htmlFor="educatorAuthRegId">Username<span>*</span></label>
-                    <input id="educatorAuthRegId" name="phone" type="text" placeholder="Your email, registration number, or mobile number" required />
+                    <CountryPhoneField id="educatorAuthRegId" name="phone" label="Username or phone" placeholder="Email, username, or mobile number" />
                     <label htmlFor="educatorAuthRegPassword">Password<span>*</span></label>
                     <div className="edu-password-row">
                       <input
@@ -2497,7 +2589,20 @@ function App() {
               </ul>
             </div>
             <div className="edu-auth-form">
-              {authMode === "login" ? (
+              {authMode === "change-password" ? (
+                <>
+                  <h2>Change student password</h2>
+                  <p className="edu-legal">{passwordRequestId ? "Enter the one-time password sent to you to finish updating your password." : "Choose a new password, then submit your account identifier for OTP verification."}</p>
+                  <form className="edu-underline-form" onSubmit={handleChangePassword}>
+                    <CountryPhoneField id="studentChangeId" name="identifier" label="Username or phone" defaultValue={loginIdentifier} placeholder="Mobile number or username" />
+                    {passwordRequestId ? <><label htmlFor="studentCurrentPassword">One-time password<span>*</span></label><input id="studentCurrentPassword" name="currentPassword" type="text" inputMode="numeric" autoComplete="one-time-code" required /></> : null}
+                    <label htmlFor="studentNewPassword">New password<span>*</span></label>
+                    <input id="studentNewPassword" name="newPassword" type="password" minLength="6" required />
+                    <button className="button coral student-login-btn" type="submit">{passwordRequestId ? "Update password" : "Send OTP"}</button>
+                  </form>
+                  <p className="student-switch"><button type="button" onClick={() => setAuthMode("login")}>Back to log in</button></p>
+                </>
+              ) : authMode === "login" ? (
                 <>
                   <h2>Log in as a Student</h2>
                   <button
@@ -2510,15 +2615,7 @@ function App() {
                   <p className="edu-or">or</p>
                   <form className="edu-underline-form" onSubmit={handleLoginSubmit}>
                     <label htmlFor="studentAuthId">Username<span>*</span></label>
-                    <input
-                      id="studentAuthId"
-                      name="phone"
-                      type="text"
-                      value={loginIdentifier}
-                      onChange={(event) => setLoginIdentifier(event.target.value)}
-                      placeholder="Your email, registration number, or mobile number"
-                      required
-                    />
+                    <CountryPhoneField id="studentAuthId" name="phone" label="Username or phone" value={loginIdentifier} onChange={(event) => setLoginIdentifier(event.target.value)} placeholder="Email, username, or mobile number" />
                     <label htmlFor="studentAuthPassword">Password<span>*</span></label>
                     <div className="edu-password-row">
                       <input
@@ -2539,7 +2636,8 @@ function App() {
                     <button className="button coral student-login-btn" type="submit">Log in</button>
                   </form>
                   <p className="edu-legal">By clicking Continue or Sign up, you agree to Crab Learn Terms of Use and Privacy Policy.</p>
-                  <button className="edu-link" type="button" onClick={() => setLoginMessage("Use Contact on the homepage if you need help resetting access.")}>Forgot Password?</button>
+                  <button className="edu-link" type="button" onClick={() => { setPasswordRequestId(""); setAuthMode("change-password"); }}>Forgot Password?</button>
+                  <button className="edu-link" type="button" onClick={() => { setPasswordRequestId(""); setAuthMode("change-password"); }}>Change password</button>
                   <p className="student-switch">Don't have an account? <button type="button" onClick={() => setAuthMode("register")}>Sign up</button></p>
                 </>
               ) : (
@@ -2556,8 +2654,7 @@ function App() {
                   <form className="edu-underline-form" onSubmit={handleRegisterSubmit}>
                     <label htmlFor="studentAuthName">Full name<span>*</span></label>
                     <input id="studentAuthName" name="fullName" type="text" placeholder="Your full name" required />
-                    <label htmlFor="studentAuthRegId">Username<span>*</span></label>
-                    <input id="studentAuthRegId" name="phone" type="text" placeholder="Your email, registration number, or mobile number" required />
+                    <CountryPhoneField id="studentAuthRegId" name="phone" label="Username or phone" placeholder="Email, username, or mobile number" />
                     <label htmlFor="studentAuthRegPassword">Password<span>*</span></label>
                     <div className="edu-password-row">
                       <input
@@ -2636,6 +2733,8 @@ function App() {
                   identifier={currentUser?.phone || currentUser?.full_name || ""}
                   password={sessionPasswordRef.current || ""}
                   title={activeMeeting.subject}
+                  userRole={currentUser?.role}
+                  onLeave={leaveMeeting}
                 />
               </div>
             </ErrorBoundary>
@@ -2979,6 +3078,48 @@ function App() {
                     <button className="button portal-button blue" type="button" onClick={handleAdminListUsers} disabled={adminUsersLoading}>
                       {adminUsersLoading ? "Loading users..." : "Load / Refresh Users"}
                     </button>
+                  </article>
+
+                  <article className="mobile-card admin-card">
+                    <div className="audit-header">
+                      <div>
+                        <span className="audit-eyebrow">Supervisor review desk</span>
+                        <h4 className="admin-heading">Audit approvals</h4>
+                        <p className="audit-intro">Validate new accounts and password requests before access changes are applied.</p>
+                      </div>
+                      <span className="audit-total">{pendingEducators.length + pendingStudents.length} open</span>
+                    </div>
+                    <div className="audit-summary-grid">
+                      <button className={`audit-summary audit-summary--pink${auditFilter === "educators" ? " is-selected" : ""}`} type="button" onClick={() => setAuditFilter("educators")}>
+                        <strong>{pendingEducators.length}</strong><span>New educators</span>
+                      </button>
+                      <button className={`audit-summary audit-summary--orange${auditFilter === "students" ? " is-selected" : ""}`} type="button" onClick={() => setAuditFilter("students")}>
+                        <strong>{pendingStudents.length}</strong><span>New students</span>
+                      </button>
+                    </div>
+                    <div className="audit-filter-row" role="tablist" aria-label="Audit request filters">
+                      {[["all", "All requests"], ["educators", "Educators"], ["students", "Students"]].map(([value, label]) => (
+                        <button key={value} className={`audit-filter${auditFilter === value ? " active" : ""}`} type="button" onClick={() => setAuditFilter(value)}>{label}</button>
+                      ))}
+                    </div>
+                    <div className="audit-request-list">
+                      {auditFilter !== "passwords" && (auditFilter === "all" || auditFilter === "educators") ? pendingEducators.map((user) => (
+                        <div className="audit-request audit-request--educator" key={`educator-${user.id}`}>
+                          <div className="audit-request-icon">ED</div>
+                          <div className="audit-request-body"><strong>{user.full_name}</strong><span>Educator account · {user.phone}</span><small>Requested {new Date(user.created_at).toLocaleString()}</small></div>
+                          <div className="audit-request-actions"><button className="button portal-button green" type="button" onClick={() => handleRowApproveUser(user.phone)}>Approve</button><button className="button portal-button red" type="button" onClick={() => handleRowDenyUser(user.phone)}>Decline</button></div>
+                        </div>
+                      )) : null}
+                      {(auditFilter === "all" || auditFilter === "students") ? pendingStudents.map((user) => (
+                        <div className="audit-request audit-request--student" key={`student-${user.id}`}>
+                          <div className="audit-request-icon">ST</div>
+                          <div className="audit-request-body"><strong>{user.full_name}</strong><span>Student account · {user.phone}</span><small>Requested {new Date(user.created_at).toLocaleString()}</small></div>
+                          <div className="audit-request-actions"><button className="button portal-button green" type="button" onClick={() => handleRowApproveUser(user.phone)}>Approve</button><button className="button portal-button red" type="button" onClick={() => handleRowDenyUser(user.phone)}>Decline</button></div>
+                        </div>
+                      )) : null}
+                      {((auditFilter === "educators" && !pendingEducators.length) || (auditFilter === "students" && !pendingStudents.length) || (auditFilter === "all" && !pendingEducators.length && !pendingStudents.length)) ? <p className="audit-empty">Everything is reviewed. New account requests will appear here after the next refresh.</p> : null}
+                    </div>
+                    <button className="button portal-button blue audit-refresh" type="button" onClick={handleAdminListUsers} disabled={adminUsersLoading}>Refresh audit queue</button>
                   </article>
 
                   <article className="mobile-card admin-card">

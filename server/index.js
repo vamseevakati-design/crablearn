@@ -1,4 +1,5 @@
 import cors from "cors";
+import crypto from "crypto";
 import dotenv from "dotenv";
 import express from "express";
 import fs from "fs";
@@ -17,6 +18,7 @@ import { attachJunnuWs } from "./junnuWs.js";
 import {
   authenticateStudent,
   changeStudentPassword,
+  completePasswordChangeRequest,
   closeDb,
   listJunnuSnapshots,
   createApprovalNotification,
@@ -32,14 +34,24 @@ import {
   getClassesForUser,
   getDb,
   listApprovalNotifications,
+  listPasswordChangeRequests,
+  findStudentByIdentifier,
   listAssignments,
   listMeetings,
   listStudents,
   query,
   resetStudentPassword,
+  createPasswordChangeRequest,
+  reviewPasswordChangeRequest,
   updateStudentStatus,
   unlockStudent
 } from "./db.js";
+import {
+  sendMeetingNotifications,
+  sendPasswordOtpNotifications,
+  sendPasswordUpdatedNotification,
+  triggerOnboardingWorkflow
+} from "./notifications.js";
 import {
   closeAccountsDb,
   createAccountEntry,
@@ -223,13 +235,90 @@ async function ensureSchema() {
 
   query(`
     CREATE TABLE IF NOT EXISTS students (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER PRIMARY KEY AUTOINCREMENT,
       full_name TEXT NOT NULL,
       phone TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL,
+      email TEXT UNIQUE,
+      country_code TEXT,
       status TEXT NOT NULL DEFAULT 'approved',
-      role TEXT NOT NULL DEFAULT 'student',
-      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  query(`
+    CREATE TABLE IF NOT EXISTS educators (
+      educator_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      full_name TEXT NOT NULL,
+      phone TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      email TEXT UNIQUE,
+      country_code TEXT,
+      specialization TEXT,
+      qualification TEXT,
+      status TEXT NOT NULL DEFAULT 'approved',
+      salary_per_hour NUMERIC(10,2),
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  query(`
+    CREATE TABLE IF NOT EXISTS staff_accounts (
+      staff_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      full_name TEXT NOT NULL,
+      phone TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      email TEXT UNIQUE,
+      role TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'approved',
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  query(`
+    CREATE TABLE IF NOT EXISTS student_educator_map (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL,
+      educator_id INTEGER NOT NULL,
+      subject_name TEXT,
+      class_type TEXT,
+      start_date DATE,
+      end_date DATE,
+      status TEXT NOT NULL DEFAULT 'ongoing'
+    );
+  `);
+
+  query(`
+    CREATE TABLE IF NOT EXISTS class_schedule (
+      class_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      educator_id INTEGER NOT NULL,
+      student_id INTEGER NOT NULL,
+      subject_name TEXT,
+      class_type TEXT,
+      start_time DATETIME,
+      end_time DATETIME,
+      location TEXT,
+      status TEXT NOT NULL DEFAULT 'scheduled',
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  query(`
+    CREATE TABLE IF NOT EXISTS payments (
+      payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER,
+      educator_id INTEGER,
+      class_id INTEGER,
+      amount NUMERIC(10,2),
+      currency TEXT,
+      payment_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      payment_method TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      transaction_reference TEXT UNIQUE
     );
   `);
 
@@ -331,7 +420,7 @@ app.post("/api/auth/login", (req, res) => {
   }
 });
 
-app.post("/api/auth/register", (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
   const { fullName, phone, password, role } = req.body ?? {};
 
   if (!fullName || !phone || !password) {
@@ -348,6 +437,7 @@ app.post("/api/auth/register", (req, res) => {
       role: allowedRole,
       status: "pending"
     });
+    await triggerOnboardingWorkflow({ student: created });
     const { contacts } = queueApprovalNotification(created);
 
     return res.status(201).json({
@@ -366,15 +456,29 @@ app.post("/api/auth/register", (req, res) => {
   }
 });
 
-app.post("/api/auth/change-password", (req, res) => {
-  const { identifier, phone, currentPassword, newPassword } = req.body ?? {};
+app.post("/api/auth/change-password", async (req, res) => {
+  const { identifier, phone, newPassword } = req.body ?? {};
   const loginId = String(phone || identifier || "").trim();
-  if (!loginId || !currentPassword || !newPassword) {
-    return res.status(400).json({ ok: false, message: "Username/phone, current password, and new password are required." });
+  if (!loginId || !newPassword) {
+    return res.status(400).json({ ok: false, message: "Username/phone and new password are required." });
   }
   try {
-    const student = changeStudentPassword(loginId, String(currentPassword), String(newPassword));
-    return res.json({ ok: true, message: `Password changed for ${student.full_name}.` });
+    const student = findStudentByIdentifier(loginId);
+    if (!student || student.status !== "approved") {
+      return res.status(404).json({ ok: false, message: "Approved educator or student account not found." });
+    }
+    if (String(newPassword).length < 6) {
+      return res.status(400).json({ ok: false, message: "New password must be at least 6 characters." });
+    }
+    const otp = String(crypto.randomInt(100000, 1000000));
+    const request = createPasswordChangeRequest({
+      student,
+      newPassword: String(newPassword),
+      otpHash: crypto.createHash("sha256").update(otp).digest("hex"),
+      otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString()
+    });
+    const deliveries = await sendPasswordOtpNotifications({ student, otp });
+    return res.status(202).json({ ok: true, pending: true, requestId: request.id, deliveries, message: `Verification code sent for ${request.student_name}. Enter it below to finish updating your password.` });
   } catch (error) {
     if (String(error.message) === "INVALID_CURRENT_PASSWORD") {
       return res.status(401).json({ ok: false, message: "Current password is incorrect." });
@@ -384,6 +488,26 @@ app.post("/api/auth/change-password", (req, res) => {
     }
     return res.status(500).json({ ok: false, message: "Could not change password." });
   }
+});
+
+app.post("/api/auth/change-password/complete", async (req, res) => {
+  const { requestId, otp, newPassword } = req.body ?? {};
+  if (!requestId || !otp || !newPassword) {
+    return res.status(400).json({ ok: false, message: "Request ID, one-time password, and new password are required." });
+  }
+
+  const result = completePasswordChangeRequest(requestId, crypto.createHash("sha256").update(String(otp)).digest("hex"), String(newPassword));
+  if (result.error === "REQUEST_NOT_APPROVED") return res.status(403).json({ ok: false, message: "Your request is still awaiting supervisor approval." });
+  if (result.error === "INVALID_OTP") return res.status(401).json({ ok: false, message: "The one-time password is incorrect." });
+  if (result.error === "OTP_EXPIRED") return res.status(401).json({ ok: false, message: "The one-time password has expired. Submit a new request." });
+  if (result.error === "PASSWORD_TOO_SHORT") return res.status(400).json({ ok: false, message: "New password must be at least 6 characters." });
+  if (result.error) return res.status(404).json({ ok: false, message: "Password request user not found." });
+  const deliveries = await sendPasswordUpdatedNotification({ student: result.student });
+  return res.json({
+    ok: true,
+    message: `Password updated for ${result.student.full_name}. You can now log in with the new password.`,
+    deliveries
+  });
 });
 
 app.post("/api/admin/users", (req, res) => {
@@ -429,7 +553,8 @@ app.post("/api/admin/users/list", (req, res) => {
     users,
     assignments: listAssignments(),
     approvalContacts: getApprovalContacts(),
-    notifications: listApprovalNotifications()
+    notifications: listApprovalNotifications(),
+    passwordChangeRequests: listPasswordChangeRequests()
   });
 });
 
@@ -479,8 +604,8 @@ app.post("/api/classes/mine", async (req, res) => {
   return res.json({ ok: true, classes });
 });
 
-app.post("/api/meetings", (req, res) => {
-  const { phone, identifier, password, title, kind, startsAt, durationMin, platform, joinUrl, studentIds, teacherIds } = req.body ?? {};
+app.post("/api/meetings", async (req, res) => {
+  const { phone, identifier, password, title, kind, startsAt, durationMin, platform, joinUrl, studentIds, teacherIds, recurrence, occurrences } = req.body ?? {};
   const loginId = String(phone || identifier || "").trim();
   if (!loginId || !password) {
     return res.status(400).json({ ok: false, message: "Sign in is required to schedule a call." });
@@ -505,22 +630,33 @@ app.post("/api/meetings", (req, res) => {
         return res.status(403).json({ ok: false, message: "You can only schedule calls with students mapped to you." });
       }
     }
-    const meeting = createMeeting({
-      title,
-      kind,
-      startsAt,
-      durationMin,
-      platform,
-      joinUrl,
-      hostId: actor.id,
-      studentIds: nextStudentIds,
-      teacherIds: nextTeacherIds,
-      createdBy: actor.full_name
+    const repeatCount = recurrence === "weekly" ? Math.min(52, Math.max(2, Number(occurrences) || 4)) : 1;
+    const meetings = Array.from({ length: repeatCount }, (_, index) => {
+      const occurrenceStart = new Date(startsAt);
+      occurrenceStart.setDate(occurrenceStart.getDate() + index * 7);
+      return createMeeting({
+        title,
+        kind,
+        startsAt: occurrenceStart.toISOString(),
+        durationMin,
+        platform,
+        joinUrl,
+        hostId: actor.id,
+        studentIds: nextStudentIds,
+        teacherIds: nextTeacherIds,
+        createdBy: actor.full_name,
+        recurrence: recurrence === "weekly" ? "weekly" : "none"
+      });
     });
+    const meeting = meetings[0];
+    const participants = listStudents().filter((user) => meeting.participant_ids.includes(Number(user.id)));
+    const notifications = await Promise.all(meetings.map((item) => sendMeetingNotifications({ meeting: item, recipients: participants })));
     return res.status(201).json({
       ok: true,
-      message: `${meeting.mode_label} Junnu call scheduled.`,
+      message: `${repeatCount > 1 ? `${repeatCount} weekly ` : ""}${meeting.mode_label} Junnu call scheduled.`,
       meeting,
+      meetingsCreated: meetings,
+      notifications,
       classes: getClassesForUser(actor),
       meetings: listMeetings()
     });
@@ -673,6 +809,38 @@ app.post("/api/junnu/snapshot", (req, res) => {
     url,
     snapshots: listJunnuSnapshots(roomId)
   });
+});
+
+app.post("/api/junnu/file", (req, res) => {
+  const actor = requireJunnuActor(req, res);
+  if (!actor) {
+    return;
+  }
+  const roomId = String(req.body?.roomId || "").trim();
+  const file = req.body?.file || {};
+  const match = String(file.data || "").match(/^data:([^;]+);base64,(.+)$/);
+  if (!roomId || !match || !isAllowedJunnuRoomActor(actor, roomId)) {
+    return res.status(400).json({ ok: false, message: "A valid shared file is required." });
+  }
+  const safeRoom = roomId.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const safeName = String(file.name || "shared-file").replace(/[^a-zA-Z0-9._-]/g, "_").slice(-180);
+  const filename = `${Date.now()}-${safeName}`;
+  const roomDir = path.join(snapshotDir, safeRoom, "files");
+  try {
+    fs.mkdirSync(roomDir, { recursive: true });
+    fs.writeFileSync(path.join(roomDir, filename), Buffer.from(match[2], "base64"));
+  } catch (_error) {
+    return res.status(503).json({ ok: false, message: "Shared file storage is unavailable." });
+  }
+  const shared = {
+    id: `file-${Date.now()}`,
+    name: safeName,
+    url: `/junnu-snapshots/${safeRoom}/files/${filename}`,
+    type: match[1],
+    size: Number(file.size) || 0
+  };
+  junnuSignal({ roomId, from: `file-${actor.id}`, to: "*", type: "file", data: shared });
+  return res.status(201).json({ ok: true, file: shared });
 });
 
 app.post("/api/admin/meetings/:id/cancel", (req, res) => {
@@ -839,6 +1007,29 @@ app.post("/api/admin/users/:phone/reset-password", (req, res) => {
     }
     return res.status(500).json({ ok: false, message: "Failed to reset password." });
   }
+});
+
+app.post("/api/admin/password-change-requests/:id/:decision", (req, res) => {
+  const actor = requirePrivilegedActor(req, res);
+  if (!actor) {
+    return;
+  }
+
+  const decision = String(req.params.decision || "").trim().toLowerCase();
+  if (!["approved", "denied"].includes(decision)) {
+    return res.status(400).json({ ok: false, message: "Decision must be approved or denied." });
+  }
+
+  const request = reviewPasswordChangeRequest(req.params.id, decision, actor.full_name);
+  if (!request) {
+    return res.status(404).json({ ok: false, message: "Pending password request not found." });
+  }
+
+  return res.json({
+    ok: true,
+    message: `Password request ${decision} by ${actor.full_name}.`,
+    request
+  });
 });
 
 app.post("/api/callback-requests", (req, res) => {

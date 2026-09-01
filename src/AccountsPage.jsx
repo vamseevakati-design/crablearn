@@ -586,7 +586,7 @@ function StudentEnrollSection({ apiBaseUrl, onSaved, isSupervisor, currentUser }
           </div>
         ) : null}
         <div className="rates-table-wrap">
-          <table className="report-table">
+          <table className="report-table accounts-record-table">
             <thead><tr>{isSupervisor ? <th>Action</th> : null}<th>Student</th><th>ID</th><th>Teacher</th><th>Subject</th><th className="col-num">Fees</th><th>Month</th></tr></thead>
             <tbody>
               {recentEntries.length === 0 ? (
@@ -764,7 +764,7 @@ function TeacherEnrollSection({ apiBaseUrl, isSupervisor, currentUser }) {
           </div>
         ) : null}
         <div className="rates-table-wrap">
-          <table className="report-table">
+          <table className="report-table accounts-record-table">
             <thead><tr>{isSupervisor ? <th>Action</th> : null}<th>CLT ID</th><th>Teacher</th><th>Subject</th><th>Class</th><th className="col-num">₹/hr</th><th>Effective From</th><th>Status</th></tr></thead>
             <tbody>
               {rates.length === 0 ? (
@@ -1041,7 +1041,7 @@ function SubjectEnrollSection({ apiBaseUrl, isSupervisor, currentUser }) {
           </div>
         ) : null}
         <div className="rates-table-wrap">
-          <table className="report-table">
+          <table className="report-table accounts-record-table">
             <thead><tr>{isSupervisor ? <th>Action</th> : null}<th>Subject</th><th>Student</th><th>Teacher</th><th className="col-num">Fees</th><th>Month</th></tr></thead>
             <tbody>
               {history.length === 0 ? (
@@ -1327,7 +1327,7 @@ function RatesPanel({ apiBaseUrl, mode = "teacher", isSupervisor = true, current
             </div>
           ) : null}
           <div className="rates-table-wrap rates-table-wrap--tall">
-            <table className="report-table">
+            <table className="report-table accounts-record-table">
               <thead>
                 <tr>
                   {isSupervisor ? <th>Action</th> : null}
@@ -1415,7 +1415,7 @@ function RatesPanel({ apiBaseUrl, mode = "teacher", isSupervisor = true, current
           </div>
         ) : null}
         <div className="rates-table-wrap rates-table-wrap--tall">
-          <table className="report-table">
+          <table className="report-table accounts-record-table">
             <thead>
               <tr>
                 {isSupervisor ? <th>Action</th> : null}
