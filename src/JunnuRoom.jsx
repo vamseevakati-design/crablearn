@@ -36,6 +36,16 @@ function junnuWsUrl(apiBaseUrl) {
   return `${protocol}//${window.location.host}/junnu-ws`;
 }
 
+async function requestMediaWithTimeout(constraints, timeoutMs = 8000) {
+  const request = navigator.mediaDevices.getUserMedia(constraints).catch(() => null);
+  const timeout = new Promise((resolve) => window.setTimeout(() => resolve(null), timeoutMs));
+  const stream = await Promise.race([request, timeout]);
+  if (!stream) {
+    request.then((lateStream) => lateStream?.getTracks().forEach((track) => track.stop()));
+  }
+  return stream;
+}
+
 function pointFromEvent(event, canvas) {
   const rect = canvas.getBoundingClientRect();
   return {
@@ -221,7 +231,7 @@ async function applyCrystalSenders(pc) {
   }
 }
 
-export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier, password, title, userRole, onLeave }) {
+export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier, password, title, waitingFor, userRole, onLeave }) {
   const localVideoRef = useRef(null);
   const boardRef = useRef(null);
   const peerIdRef = useRef(`p-${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`}`);
@@ -803,26 +813,15 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
 
     async function start() {
       setStatus("Opening Junnu… allow camera and mic if the browser asks.");
-      let stream = null;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: AUDIO_CONSTRAINTS,
-          video: VIDEO_CONSTRAINTS
-        });
-      } catch (_hdError) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            audio: AUDIO_CONSTRAINTS,
-            video: true
-          });
-        } catch (_basicError) {
-          try {
-            stream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS, video: false });
-            setStatus("Camera is blocked. Whiteboard is open with microphone only.");
-          } catch (_audioError) {
-            setStatus("Camera and mic were blocked. Whiteboard is still open.");
-          }
-        }
+      let stream = await requestMediaWithTimeout({
+        audio: AUDIO_CONSTRAINTS,
+        video: VIDEO_CONSTRAINTS
+      });
+      if (!stream) {
+        stream = await requestMediaWithTimeout({ audio: AUDIO_CONSTRAINTS, video: true }, 2500);
+      }
+      if (!stream) {
+        setStatus("Camera and mic are unavailable. Joining the class with whiteboard access.");
       }
       if (cancelled) {
         stream?.getTracks().forEach((track) => track.stop());
@@ -1174,7 +1173,7 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
   return (
     <div className={`junnu-stage junnu-stage--teams junnu-stage--${theme}`}>
       <header className="junnu-call-header">
-        <div><strong>{title || "Junnu class"}</strong><span>{status}</span></div>
+        <div><strong>{`Class: ${title || "Junnu class"}`}</strong><span>{status}</span></div>
         <div className="junnu-header-tools">
           <button type="button" title="People"><UsersRound size={19} /><span>People</span></button>
           <button className={chatOpen ? "active" : ""} type="button" title="Chat" onClick={() => setChatOpen((open) => !open)}><MessageCircle size={19} /><span>Chat</span></button>
@@ -1192,7 +1191,7 @@ export default function JunnuRoom({ apiBaseUrl, roomId, displayName, identifier,
               <figcaption>{tile.name}{presenter?.peerId === tile.peerId ? <span className="junnu-presenter-badge">Presenter</span> : null}</figcaption>
             </figure>
           )) : (
-            <div className="junnu-waiting-state"><span>{initials}</span><strong>Waiting for others to join...</strong></div>
+            <div className="junnu-waiting-state"><span>{initials}</span><strong>{`Waiting for ${waitingFor || "the other participant"} to join...`}</strong></div>
           )}
           <figure className="junnu-self-preview">
             <video ref={localVideoRef} autoPlay muted playsInline />

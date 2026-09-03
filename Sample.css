@@ -1715,6 +1715,311 @@ h1 {
   border-color: rgba(45, 125, 255, 0.5);
 }
 
+/* Student login mirrors the educator structure with a brighter cobalt-coral identity. */
+.student-portal-section {
+  width: min(92vw, 1280px);
+  margin: clamp(1.5rem, 4vw, 4rem) auto;
+  padding: clamp(1.25rem, 3vw, 3.25rem);
+  border: 1px solid #cbd7eb;
+  border-radius: 8px;
+  background: linear-gradient(112deg, #244b82 0 43%, #334b78 43% 100%);
+  box-shadow: 0 28px 70px rgba(27, 53, 92, 0.2);
+  overflow: hidden;
+}
+
+.student-portal-section::before {
+  inset: 0;
+  height: auto;
+  border-radius: 0;
+  opacity: 0.28;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 2.4rem 2.4rem;
+  mask-image: linear-gradient(90deg, #000, transparent 72%);
+}
+
+.student-portal-section::after {
+  display: none;
+}
+
+.student-portal-section > * {
+  position: relative;
+  z-index: 1;
+}
+
+.student-portal-section .section-heading-row {
+  margin: 0 0 2.3rem;
+  padding: 0;
+  align-items: flex-start;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.student-portal-section .section-kicker {
+  color: #ffd3c9;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.student-portal-section .section-heading-row h2 {
+  max-width: 11ch;
+  color: #fff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 4vw, 4rem);
+  line-height: 0.98;
+}
+
+.student-portal-section .portal-tabs {
+  padding: 0.3rem;
+  border: 1px solid rgba(236, 244, 255, 0.38);
+  border-radius: 6px;
+  background: rgba(15, 36, 70, 0.25);
+}
+
+.student-portal-section .portal-tab {
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #dce8ff;
+}
+
+.student-portal-section .portal-tab.active {
+  background: #ef7662;
+  color: #fff;
+}
+
+.student-portal-section .student-login-layout {
+  grid-template-columns: minmax(0, 0.9fr) minmax(21rem, 31rem);
+  align-items: center;
+  gap: clamp(2rem, 7vw, 8rem);
+}
+
+.student-portal-section .student-login-phone {
+  order: 1;
+  justify-self: stretch;
+  max-width: none;
+  padding: 1rem;
+  border: 1px solid rgba(239, 118, 98, 0.62);
+  border-radius: 8px;
+  background: #172f57;
+  box-shadow: 14px 14px 0 rgba(239, 118, 98, 0.2), 0 25px 42px rgba(4, 22, 54, 0.32);
+}
+
+.student-portal-section .phone-browser {
+  padding: 0.65rem 0.9rem;
+  border-radius: 4px;
+  background: #102649;
+  color: #b9ccef;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+}
+
+.student-portal-section .portal-brand-row {
+  padding: 1.3rem 0.45rem 0.9rem;
+}
+
+.student-portal-section .portal-logo {
+  width: 3.1rem;
+  height: 3.1rem;
+  border-radius: 4px;
+  background: #ef7662;
+  color: #fff;
+}
+
+.student-portal-section .portal-title {
+  color: #fff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.6rem;
+}
+
+.student-portal-section .login-summary-card {
+  margin: 0 0 0.9rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: #284f88;
+}
+
+.student-portal-section .login-summary-card h3 {
+  color: #fff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.7rem;
+}
+
+.student-portal-section .login-summary-card p {
+  color: #d6e2f7;
+}
+
+.student-portal-section .badge.success {
+  border-radius: 3px;
+  background: #ef7662;
+  color: #fff;
+}
+
+.student-portal-section .student-login-strip span:nth-child(1) {
+  background: #ef7662;
+}
+
+.student-portal-section .student-login-strip span:nth-child(2) {
+  background: #3e86c7;
+}
+
+.student-portal-section .student-login-strip span:nth-child(3) {
+  background: #e5bd62;
+  color: #203a64;
+}
+
+.student-portal-section .login-form-panel {
+  padding: 1.35rem;
+  border: 0;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: none;
+}
+
+.student-portal-section .mobile-form label {
+  color: #244875;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.student-portal-section .mobile-form input {
+  padding: 0.88rem 0.95rem;
+  border: 1px solid #cbd7eb;
+  border-radius: 4px;
+  background: #f1f5fb;
+  color: #1d3761;
+}
+
+.student-portal-section .mobile-form input:focus {
+  outline: 2px solid rgba(239, 118, 98, 0.42);
+  border-color: #e06a58;
+}
+
+.student-portal-section .portal-button.blue {
+  margin-top: 0.55rem;
+  border-radius: 4px;
+  background: #e06a58;
+  color: #fff;
+  box-shadow: none;
+}
+
+.student-portal-section .button.ghost {
+  border-radius: 4px;
+  color: #244875;
+}
+
+.student-portal-section .student-login-copy {
+  order: 2;
+  color: #e8f0ff;
+}
+
+.student-portal-section .student-login-copy .copy-card {
+  padding: 1.35rem 0;
+  border: 0;
+  border-bottom: 1px solid rgba(224, 238, 255, 0.28);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.student-portal-section .student-login-copy .copy-card:first-child {
+  padding-top: 0;
+}
+
+.student-portal-section .student-login-copy h3,
+.student-portal-section .student-login-copy .section-kicker {
+  color: #fff;
+}
+
+.student-portal-section .student-login-copy p,
+.student-portal-section .student-login-copy li,
+.student-portal-section .student-prep-item span {
+  color: #d5e3fa;
+}
+
+.student-portal-section .student-copy-stat {
+  border: 1px solid rgba(225, 238, 255, 0.2);
+  border-radius: 4px;
+  background: rgba(8, 31, 67, 0.24);
+}
+
+.student-portal-section .student-copy-stat strong {
+  color: #fff;
+}
+
+.student-portal-section .student-copy-stat span {
+  color: #c3d6f1;
+}
+
+.student-portal-section .student-prep-item {
+  border: 1px solid rgba(225, 238, 255, 0.18);
+  border-radius: 4px;
+  background: rgba(8, 31, 67, 0.2);
+}
+
+.student-portal-section .student-prep-item strong {
+  border-radius: 4px;
+  background: #ef7662;
+}
+
+.student-portal-section .login-summary-card,
+.student-portal-section .student-login-phone .login-summary-card {
+  min-height: 8.8rem;
+  background: #1c477d;
+  color: #fff;
+}
+
+.student-portal-section .login-summary-card h3 {
+  color: #fff;
+}
+
+.student-portal-section .login-summary-card p {
+  color: #d3e6f0;
+}
+
+.student-portal-section .student-login-layout {
+  grid-template-columns: minmax(0, 0.9fr) minmax(21rem, 31rem);
+  align-items: center;
+  gap: clamp(2rem, 7vw, 8rem);
+}
+
+.student-portal-section .student-login-copy {
+  align-content: start;
+}
+
+@media (max-width: 760px) {
+  .student-portal-section {
+    width: calc(100% - 1.25rem);
+    margin: 0.65rem auto;
+    padding: 1.1rem;
+  }
+
+  .student-portal-section .section-heading-row,
+  .student-portal-section .student-login-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .student-portal-section .section-heading-row {
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .student-portal-section .student-login-phone,
+  .student-portal-section .student-login-copy {
+    order: initial;
+  }
+
+  .student-portal-section .portal-tabs {
+    justify-self: start;
+  }
+}
+
 .student-login-copy {
   gap: 1rem;
   align-content: start;
@@ -2856,6 +3161,639 @@ h1 {
   color: #e2e8f0;
   font-size: 0.82rem;
   line-height: 1.35;
+}
+
+/* Educator portal: a warm, editorial workspace rather than a generic login card. */
+.educator-portal-section {
+  width: min(92vw, 1280px);
+  margin: clamp(1.5rem, 4vw, 4rem) auto;
+  padding: clamp(1.25rem, 3vw, 3.25rem);
+  border: 1px solid #d8e5df;
+  border-radius: 8px;
+  background:
+    linear-gradient(112deg, rgba(17, 94, 89, 0.98) 0 43%, rgba(25, 71, 91, 0.98) 43% 100%);
+  box-shadow: 0 28px 70px rgba(13, 48, 49, 0.18);
+  overflow: hidden;
+}
+
+.educator-portal-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 2.4rem 2.4rem;
+  mask-image: linear-gradient(90deg, #000, transparent 70%);
+}
+
+.educator-portal-section > * {
+  position: relative;
+  z-index: 1;
+}
+
+.educator-portal-section .section-heading-row {
+  margin: 0 0 2.3rem;
+  align-items: flex-start;
+}
+
+.educator-portal-section .section-kicker {
+  color: #bcead9;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.educator-portal-section .section-heading-row h2 {
+  max-width: 11ch;
+  color: #fffdf7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 4vw, 4rem);
+  line-height: 0.98;
+}
+
+.educator-portal-section .portal-tabs {
+  padding: 0.3rem;
+  border: 1px solid rgba(232, 247, 239, 0.35);
+  border-radius: 6px;
+  background: rgba(3, 38, 38, 0.24);
+}
+
+.educator-portal-section .portal-tab {
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #d7eee4;
+}
+
+.educator-portal-section .portal-tab.active {
+  background: #d9b55b;
+  color: #173f3d;
+}
+
+.educator-portal-section .portal-layout {
+  grid-template-columns: minmax(0, 0.9fr) minmax(21rem, 31rem);
+  align-items: center;
+  gap: clamp(2rem, 7vw, 8rem);
+}
+
+.educator-portal-section .portal-phone {
+  order: 1;
+  justify-self: stretch;
+  max-width: none;
+  padding: 1rem;
+  border: 1px solid rgba(217, 181, 91, 0.55);
+  border-radius: 8px;
+  background: #102d35;
+  box-shadow: 14px 14px 0 rgba(217, 181, 91, 0.2), 0 25px 42px rgba(0, 22, 28, 0.32);
+}
+
+.educator-portal-section .phone-browser {
+  padding: 0.65rem 0.9rem;
+  border-radius: 4px;
+  background: #0b2026;
+  color: #a6c7be;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+}
+
+.educator-portal-section .portal-brand-row {
+  padding: 1.3rem 0.45rem 0.9rem;
+}
+
+.educator-portal-section .portal-logo {
+  width: 3.1rem;
+  height: 3.1rem;
+  border-radius: 4px;
+  background: #d9b55b;
+  color: #173f3d;
+}
+
+.educator-portal-section .portal-title {
+  color: #fffdf7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.6rem;
+}
+
+.educator-portal-section .login-summary-card {
+  margin: 0 0 0.9rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: #173f3d;
+}
+
+.educator-portal-section .login-summary-card h3 {
+  color: #fffdf7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.7rem;
+}
+
+.educator-portal-section .login-summary-card p {
+  color: #c9ddd5;
+}
+
+.educator-portal-section .badge.success {
+  border-radius: 3px;
+  background: #d9b55b;
+  color: #173f3d;
+}
+
+.educator-portal-section .login-form-panel {
+  padding: 1.35rem;
+  border: 0;
+  border-radius: 6px;
+  background: #fffdf7;
+  box-shadow: none;
+}
+
+.educator-portal-section .mobile-form {
+  gap: 0.72rem;
+}
+
+.educator-portal-section .mobile-form label {
+  color: #28514e;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.educator-portal-section .mobile-form input {
+  padding: 0.88rem 0.95rem;
+  border: 1px solid #cddbd4;
+  border-radius: 4px;
+  background: #f4f6f1;
+  color: #163c3a;
+}
+
+.educator-portal-section .mobile-form input:focus {
+  outline: 2px solid rgba(217, 181, 91, 0.55);
+  border-color: #c49d40;
+}
+
+.educator-portal-section .portal-button.blue {
+  margin-top: 0.55rem;
+  border-radius: 4px;
+  background: #c49732;
+  color: #172f31;
+  box-shadow: none;
+}
+
+.educator-portal-section .button.ghost {
+  border-radius: 4px;
+  color: #275551;
+}
+
+.educator-portal-section .portal-copy {
+  order: 2;
+  color: #e2f0e8;
+}
+
+.educator-portal-section .copy-card {
+  padding: 1.35rem 0;
+  border: 0;
+  border-bottom: 1px solid rgba(218, 239, 227, 0.27);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.educator-portal-section .copy-card:first-child {
+  padding-top: 0;
+}
+
+.educator-portal-section .copy-card h3 {
+  color: #fffdf7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+}
+
+.educator-portal-section .copy-card p,
+.educator-portal-section .copy-card li {
+  color: #cae2d7;
+}
+
+.educator-portal-section .copy-card li::marker {
+  color: #d9b55b;
+}
+
+/* Junnu is deliberately quiet and high-contrast: the lesson remains the visual focus. */
+.meet-room--overlay {
+  padding: clamp(0.8rem, 2vw, 1.7rem);
+  background: #edf1ef;
+}
+
+.meet-room--overlay .meet-room-bar {
+  max-width: 96rem;
+  margin: 0 auto 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #d2ddd9;
+  border-radius: 6px;
+  background: #fdfdf9;
+}
+
+.meet-room--overlay .meet-room-bar h3 {
+  color: #164946;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.meet-focus {
+  border-radius: 6px;
+  box-shadow: 0 20px 55px rgba(24, 57, 57, 0.16);
+}
+
+.junnu-stage--teams {
+  border: 1px solid #cfd9d5;
+  border-radius: 6px;
+  background: #f8faf8;
+}
+
+.junnu-call-header {
+  min-height: 4.9rem;
+  padding: 0.7rem 1.25rem;
+  border-bottom-color: #d5dfdb;
+  background: #fdfdf9;
+}
+
+.junnu-call-header strong {
+  color: #164946;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.12rem;
+}
+
+.junnu-header-tools button,
+.junnu-media-dock button {
+  color: #28514e;
+}
+
+.junnu-header-tools button:hover,
+.junnu-header-tools button.active,
+.junnu-media-dock button:hover,
+.junnu-notes-header button:hover {
+  background: #e3eee9;
+}
+
+.junnu-video-canvas {
+  background: radial-gradient(circle at 50% 25%, #315d5b, #102a32 70%);
+}
+
+.junnu-waiting-state {
+  color: #e7f0e9;
+}
+
+.junnu-waiting-state > span {
+  border: 1px solid rgba(217, 181, 91, 0.65);
+  background: #d9b55b;
+  color: #173f3d;
+  box-shadow: 0 0 0 12px rgba(217, 181, 91, 0.1);
+}
+
+.junnu-self-preview {
+  border-color: #d9b55b;
+  border-radius: 5px;
+}
+
+.junnu-media-dock {
+  padding: 0.38rem;
+  border-color: rgba(217, 181, 91, 0.5);
+  border-radius: 5px;
+  background: #fdfdf9;
+}
+
+.junnu-media-dock button.is-on {
+  background: #e5f0e9;
+  color: #164946;
+}
+
+.junnu-leave-control {
+  color: #b6363f !important;
+}
+
+.junnu-call-body .junnu-chat {
+  background: #fdfdf9;
+  border-left-color: #d5dfdb;
+}
+
+.junnu-chat-header,
+.junnu-chat-compose {
+  border-color: #d5dfdb;
+}
+
+.junnu-chat-header strong {
+  color: #164946;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.junnu-chat-compose input {
+  border-color: #cbd8d3;
+  border-radius: 4px;
+  background: #f4f7f3;
+}
+
+.junnu-chat-compose button,
+.junnu-chat-header button,
+.junnu-chat-actions button {
+  border-radius: 4px;
+  background: #e6efea;
+  color: #174945;
+}
+
+@media (max-width: 760px) {
+  .educator-portal-section {
+    width: calc(100% - 1.25rem);
+    margin: 0.65rem auto;
+    padding: 1.1rem;
+  }
+
+  .educator-portal-section .section-heading-row,
+  .educator-portal-section .portal-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .educator-portal-section .section-heading-row {
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .educator-portal-section .portal-phone,
+  .educator-portal-section .portal-copy {
+    order: initial;
+  }
+
+  .educator-portal-section .portal-tabs {
+    justify-self: start;
+  }
+
+  .junnu-call-header {
+    padding: 0.7rem;
+  }
+}
+
+/* Signed-in educator dashboard: use the page width instead of a stacked mobile-card rhythm. */
+.educator-workspace-section {
+  width: min(94vw, 1320px);
+}
+
+/* The inherited student-workspace gradient patch caused a visible two-tone edge; the educator dashboard uses a flat surface instead. */
+.educator-workspace-section.student-workspace-section::before {
+  content: none;
+}
+
+.educator-workspace-section::before {
+  display: none;
+}
+
+.educator-workspace-section .section-heading-row {
+  background: #fdfdf9;
+}
+
+.educator-workspace-toolbar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+  padding: 0.68rem 0.85rem;
+  border: 1px solid #c9d8d2;
+  border-radius: 6px;
+  background: #fdfdf9;
+  color: #164946;
+}
+
+.educator-workspace-brand {
+  border: 0;
+  background: transparent;
+  color: #164946;
+  font: 800 1.08rem Georgia, "Times New Roman", serif;
+  cursor: pointer;
+}
+
+.educator-workspace-toolbar > a {
+  color: #416460;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.educator-workspace-account {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.educator-workspace-account span {
+  padding: 0.28rem 0.5rem;
+  border: 1px solid #92bdb0;
+  border-radius: 999px;
+  background: #e4f3ec;
+  color: #17624e;
+  font-size: 0.66rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.educator-workspace-account strong {
+  color: #315c57;
+  font-size: 0.77rem;
+  white-space: nowrap;
+}
+
+.educator-workspace-account button {
+  border: 0;
+  border-radius: 4px;
+  padding: 0.44rem 0.65rem;
+  background: #e85d20;
+  color: #fff;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.educator-workspace-section .section-heading-row {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #d6e1dc;
+  border-radius: 6px;
+  background: #fdfdf9;
+}
+
+.educator-workspace-section .section-heading-row h2,
+.educator-workspace-section .section-kicker {
+  color: #164946;
+}
+
+.educator-workspace-section .portal-tab.active {
+  background: #164946;
+}
+
+.educator-workspace-section .student-workspace-phone {
+  max-width: none;
+  padding: 0.75rem;
+  border-radius: 6px;
+  background: #183d41;
+  box-shadow: 0 18px 42px rgba(22, 73, 70, 0.18);
+}
+
+.educator-workspace-section .student-dashboard-screen {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(16rem, 0.75fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: start;
+}
+
+.educator-workspace-section .student-workspace-topbar,
+.educator-workspace-section .student-workspace-hero,
+.educator-workspace-section .bottom-nav {
+  grid-column: 1 / -1;
+}
+
+.educator-workspace-section .student-workspace-topbar {
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  background: #164946;
+}
+
+.educator-workspace-section .student-workspace-hero {
+  margin: 0;
+  padding: 0.7rem 1rem;
+  border-radius: 5px;
+  background: linear-gradient(105deg, #245956, #1a3f50);
+}
+
+.educator-workspace-section .student-workspace-hero h3 {
+  max-width: 38rem;
+  margin: 0.2rem 0 0;
+  color: #fffdf7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+}
+
+.educator-workspace-section .student-workspace-hero .section-kicker {
+  color: #bde5d8;
+}
+
+.educator-workspace-section .student-workspace-mini-stats {
+  min-width: 13rem;
+}
+
+.educator-workspace-section .mobile-card {
+  margin-top: 0;
+  padding: 0.8rem;
+  border: 1px solid #d8e2de;
+  border-radius: 5px;
+  background: #fdfdf9;
+  color: #193d3c;
+  box-shadow: 0 2px 8px rgba(5, 28, 32, 0.15);
+}
+
+.educator-workspace-section .class-card h3,
+.educator-workspace-section .fee-card h3,
+.educator-workspace-section .live-card h3 {
+  font-size: 1.35rem;
+}
+
+.educator-workspace-section .roster-list li {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(14rem, 1.4fr) auto;
+  align-items: center;
+  gap: 0.22rem 0.75rem;
+  margin-bottom: 0.35rem;
+  padding: 0.46rem 0.65rem;
+  border-color: #d7e2dc;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.educator-workspace-section .roster-list span {
+  color: #42625f;
+}
+
+.educator-workspace-section .roster-list strong {
+  color: #173f3d;
+}
+
+.educator-workspace-section .session-state--expired {
+  background: #fce7e9;
+  color: #9f2836;
+}
+
+.educator-workspace-section .roster-list .session-join-row {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.educator-workspace-section .roster-list .portal-button {
+  min-height: 1.9rem;
+  margin-top: 0;
+  padding: 0.34rem 0.65rem;
+}
+
+.educator-workspace-section .bottom-nav {
+  margin-top: 0;
+  padding: 0.35rem;
+  border: 1px solid #295b58;
+  border-radius: 5px;
+  background: #102d35;
+}
+
+.educator-workspace-section .bottom-link {
+  color: #d4e7df;
+}
+
+.educator-workspace-section .bottom-link.active {
+  background: #d9b55b;
+  color: #163c3a;
+}
+
+@media (max-width: 760px) {
+  .educator-workspace-section {
+    width: calc(100% - 1.25rem);
+  }
+
+  .educator-workspace-section .student-dashboard-screen {
+    grid-template-columns: 1fr;
+  }
+
+  .educator-workspace-toolbar {
+    grid-template-columns: 1fr auto;
+    gap: 0.55rem;
+  }
+
+  .educator-workspace-toolbar > a {
+    display: none;
+  }
+
+  .educator-workspace-account {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .educator-workspace-account strong {
+    order: 3;
+    width: 100%;
+    white-space: normal;
+  }
+
+  .educator-workspace-section .roster-list li {
+    display: flex;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .educator-workspace-section .roster-list .session-join-row {
+    margin-top: 0.35rem;
+    white-space: normal;
+  }
+
+  .educator-workspace-section .student-workspace-mini-stats {
+    min-width: 0;
+  }
 }
 
 .junnu-board-pane {

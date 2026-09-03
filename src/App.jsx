@@ -449,6 +449,18 @@ const signInRoutes = {
   accounts: "/Accounts"
 };
 
+const PORTAL_SESSION_KEY = "crablearn-portal-session";
+
+function readPortalSession() {
+  try {
+    const stored = window.sessionStorage.getItem(PORTAL_SESSION_KEY);
+    const session = stored ? JSON.parse(stored) : null;
+    return session?.user && session?.password ? session : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
 function isEducatorJoinPath(pathname) {
   const normalizedPath = decodeURIComponent(String(pathname || "")).trim().toLowerCase().replace(/\/+$/, "");
   return normalizedPath.endsWith("become educator") || normalizedPath.endsWith("become-educator");
@@ -678,6 +690,7 @@ function toMeetingStartIso(localValue) {
 
 function App() {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
+  const initialPortalSession = readPortalSession();
   const [openNav, setOpenNav] = useState(null);
   const [signInMenuOpen, setSignInMenuOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState(defaultCategory);
@@ -696,10 +709,10 @@ function App() {
   const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [passwordRequestId, setPasswordRequestId] = useState("");
   const whyViewportRef = useRef(null);
-  const sessionPasswordRef = useRef("");
-  const [currentUser, setCurrentUser] = useState(null);
-  const [mappedRoster, setMappedRoster] = useState([]);
-  const [classPack, setClassPack] = useState({ month_label: "", eligible: 0, pending: 0, sessions: [] });
+  const sessionPasswordRef = useRef(initialPortalSession?.password || "");
+  const [currentUser, setCurrentUser] = useState(initialPortalSession?.user || null);
+  const [mappedRoster, setMappedRoster] = useState(initialPortalSession?.assignments || []);
+  const [classPack, setClassPack] = useState(initialPortalSession?.classes || { month_label: "", eligible: 0, pending: 0, sessions: [] });
   const [activeMeeting, setActiveMeeting] = useState(null);
   const [meetingKind, setMeetingKind] = useState("o2o");
   const [meetingTitle, setMeetingTitle] = useState("");
@@ -781,6 +794,7 @@ function App() {
   const showStudentSupportContent = !showAccountsDashboard && !isAdmin && portalScreen === "login";
   const isStudentLoginView = activePortalRole === "student" && portalScreen === "login";
   const isStudentWorkspaceView = ["student", "teacher"].includes(activePortalRole) && ["dashboard", "live", "schedule"].includes(portalScreen);
+  const isEducatorWorkspace = Boolean(currentUser) && activePortalRole === "teacher" && isStudentWorkspaceView;
   const portalPreviewLabel = isAccountsPortal ? "Accounts workspace" : `${formatPortalRoleLabel(activePortalRole)} portal`;
   const portalLoginLabel = isAccountsPortal ? "accounts / admin" : activeSignInProfile.badgeText;
   const showGlobalHomeButton = showPortalSection || portalScreen !== "home";
@@ -818,6 +832,18 @@ function App() {
     const sanitizedPhone = String(loginIdentifier || "").replace(/\D/g, "");
     return teacherPhoneRoleOverrides[sanitizedPhone] || signInRole;
   }, [loginIdentifier, signInRole]);
+
+  useEffect(() => {
+    if (!currentUser || !sessionPasswordRef.current) {
+      return;
+    }
+    window.sessionStorage.setItem(PORTAL_SESSION_KEY, JSON.stringify({
+      user: currentUser,
+      password: sessionPasswordRef.current,
+      assignments: mappedRoster,
+      classes: classPack
+    }));
+  }, [currentUser, mappedRoster, classPack]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -1010,6 +1036,15 @@ function App() {
       return session?.student?.full_name || "";
     }
     return session?.teacher?.full_name || "";
+  }
+
+  function meetingDisplayTitle(session) {
+    const subject = String(session?.subject || "").trim();
+    if (subject && !/^(1\s*to\s*1\s*class|class)$/i.test(subject)) {
+      return subject;
+    }
+    const participant = sessionPeopleLabel(session);
+    return participant ? `Private lesson with ${participant}` : session?.kind === "m2m" ? "Group class" : "Private lesson";
   }
 
   function goToHomePage() {
@@ -1622,6 +1657,7 @@ function App() {
   }
 
   function handleLogout() {
+    window.sessionStorage.removeItem(PORTAL_SESSION_KEY);
     setCurrentUser(null);
     sessionPasswordRef.current = "";
     setMappedRoster([]);
@@ -1634,7 +1670,7 @@ function App() {
     setMeetingTeacherId("");
     setMeetingStudentIds([]);
     setMeetingTeacherIds([]);
-    setMeetingMessage("Pick 1 to 1 or many to many, then save the call.");
+    setMeetingRecurrence("none");
     setMapStudentId("");
     setMapTeacherId("");
     setAssignmentMessage("Load users, then map a student with an educator.");
@@ -1739,13 +1775,13 @@ function App() {
 
   return (
     <div className={`site-shell page-fit${showPublicPage ? " page-fit--home" : " page-fit--app"}`}>
-      {showGlobalHomeButton ? (
+      {showGlobalHomeButton && !isEducatorWorkspace ? (
         <button className="floating-home-button" type="button" onClick={goToHomePage}>
           Back to Home
         </button>
       ) : null}
 
-      <header className="site-header" id="top">
+      {!isEducatorWorkspace ? <header className="site-header" id="top">
         <div className="top-nav">
           <button className="brand-block" type="button" onClick={goToHomePage}>
             <span className="brand-word">crab</span>
@@ -1811,6 +1847,11 @@ function App() {
               </div>
             ) : null}
             {showMarketingContent ? <a className="nav-link" href="#contact" onClick={(event) => handleHomeHashNav(event, "contact")}>Contact</a> : null}
+            {showMarketingContent && currentUser && ["student", "teacher"].includes(currentUserRole) ? (
+              <button className="nav-link nav-button portal-return-link" type="button" onClick={() => openWorkspace(currentUserRole)}>
+                {`Return to ${formatPortalRoleLabel(currentUserRole)} portal`}
+              </button>
+            ) : null}
             {showMarketingContent ? (
               <div className="menu-anchor">
                 <button className="nav-link nav-button" type="button" onClick={() => setOpenNav((v) => (v === "more" ? null : "more"))}>
@@ -1872,7 +1913,7 @@ function App() {
           <div className="auth-feedback" role="status" aria-live="polite">{authMessage}</div>
         ) : null}
 
-      </header>
+      </header> : null}
 
       {signInMenuOpen ? (
         <div className="role-modal-backdrop" onClick={() => setSignInMenuOpen(false)}>
@@ -2715,15 +2756,6 @@ function App() {
       <main>
         {activeMeeting ? (
           <section className="meet-room meet-room--overlay">
-            <div className="meet-room-bar">
-              <div>
-                <p className="section-kicker">Junnu</p>
-                <h3>{activeMeeting.subject || "Class"}</h3>
-                <p>{sessionPeopleLabel(activeMeeting)}</p>
-                <p className="meet-noise-flag">Junnu HD · shared whiteboard</p>
-              </div>
-              <button className="button portal-button red" type="button" onClick={leaveMeeting}>Leave</button>
-            </div>
             <ErrorBoundary onReset={leaveMeeting}>
               <div className={`meet-focus${activeMeeting.kind === "m2m" ? " meet-focus--group" : ""}`}>
                 <JunnuRoom
@@ -2732,13 +2764,13 @@ function App() {
                   displayName={learnerName}
                   identifier={currentUser?.phone || currentUser?.full_name || ""}
                   password={sessionPasswordRef.current || ""}
-                  title={activeMeeting.subject}
+                  title={meetingDisplayTitle(activeMeeting)}
+                  waitingFor={activeMeeting.kind === "m2m" ? "other participants" : sessionPeopleLabel(activeMeeting)}
                   userRole={currentUser?.role}
                   onLeave={leaveMeeting}
                 />
               </div>
             </ErrorBoundary>
-            <p className="meet-hint">Video stays in a strip at the top. The whiteboard uses the rest of the screen.</p>
           </section>
         ) : (
           <>
@@ -2781,7 +2813,18 @@ function App() {
             ) : null}
           </section>
         ) : showPortalPreviewSection ? (
-        <section className={`section portal-section${isStudentLoginView ? " student-portal-section" : ""}${isStudentWorkspaceView ? " student-workspace-section" : ""}`} id="portal">
+        <section className={`section portal-section${isStudentLoginView ? " student-portal-section" : ""}${activePortalRole === "teacher" && portalScreen === "login" ? " educator-portal-section" : ""}${activePortalRole === "teacher" && isStudentWorkspaceView ? " educator-workspace-section" : ""}${isStudentWorkspaceView ? " student-workspace-section" : ""}`} id="portal">
+          {isEducatorWorkspace ? (
+            <div className="educator-workspace-toolbar">
+              <button className="educator-workspace-brand" type="button" onClick={goToHomePage}>crablearn.in</button>
+              <a href="#about" onClick={(event) => handleHomeHashNav(event, "about")}>About</a>
+              <div className="educator-workspace-account">
+                <span>Educator signed in</span>
+                <strong>{`Welcome back, ${learnerName}.`}</strong>
+                <button type="button" onClick={handleLogout}>Sign out</button>
+              </div>
+            </div>
+          ) : null}
           <div className={`section-heading-row${isStudentWorkspaceView ? " student-workspace-heading-row" : ""}`}>
             <div>
               <p className="section-kicker">{portalPreviewLabel}</p>
