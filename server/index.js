@@ -615,15 +615,30 @@ app.post("/api/meetings", async (req, res) => {
     return res.status(401).json({ ok: false, message: "Invalid login credentials." });
   }
   const role = String(actor.role || "").toLowerCase();
-  if (!["teacher", "admin", "supervisor"].includes(role)) {
-    return res.status(403).json({ ok: false, message: "Only educators and supervisors can schedule calls." });
+  if (!["student", "teacher", "admin", "supervisor"].includes(role)) {
+    return res.status(403).json({ ok: false, message: "Only students, educators, and supervisors can schedule calls." });
   }
   try {
-    const assignedStudentIds = getAssignmentsForUser(actor).map((item) => Number(item.student_id));
+    const assignments = getAssignmentsForUser(actor);
+    const assignedStudentIds = assignments.map((item) => Number(item.student_id));
+    const assignedTeacherIds = assignments.map((item) => Number(item.teacher_id));
     const nextStudentIds = Array.isArray(studentIds) ? studentIds : [studentIds];
-    const nextTeacherIds = role === "teacher"
+    const nextTeacherIds = role === "student"
+      ? [actor.id]
+      : role === "teacher"
       ? [actor.id, ...(Array.isArray(teacherIds) ? teacherIds : [])]
       : (Array.isArray(teacherIds) ? teacherIds : [teacherIds]);
+    if (role === "student") {
+      if (String(kind || "o2o").toLowerCase() !== "o2o") {
+        return res.status(400).json({ ok: false, message: "Students can schedule 1 to 1 Junnu calls only." });
+      }
+      const requestedTeacherIds = Array.isArray(teacherIds) ? teacherIds : [teacherIds];
+      if (requestedTeacherIds.length !== 1 || !assignedTeacherIds.includes(Number(requestedTeacherIds[0]))) {
+        return res.status(403).json({ ok: false, message: "You can only schedule with an educator mapped to your account." });
+      }
+      nextStudentIds.splice(0, nextStudentIds.length, actor.id);
+      nextTeacherIds.splice(0, nextTeacherIds.length, Number(requestedTeacherIds[0]));
+    }
     if (role === "teacher") {
       const allowed = new Set(assignedStudentIds);
       if (nextStudentIds.some((id) => !allowed.has(Number(id)))) {

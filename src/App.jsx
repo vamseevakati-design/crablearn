@@ -713,6 +713,9 @@ function App() {
   const [currentUser, setCurrentUser] = useState(initialPortalSession?.user || null);
   const [mappedRoster, setMappedRoster] = useState(initialPortalSession?.assignments || []);
   const [classPack, setClassPack] = useState(initialPortalSession?.classes || { month_label: "", eligible: 0, pending: 0, sessions: [] });
+  const classHistory = classPack.history || [];
+  const historyMonths = [...new Set(classHistory.map((session) => session.month_key).filter(Boolean))];
+  const [historyMonth, setHistoryMonth] = useState("");
   const [activeMeeting, setActiveMeeting] = useState(null);
   const [meetingKind, setMeetingKind] = useState("o2o");
   const [meetingTitle, setMeetingTitle] = useState("");
@@ -755,6 +758,9 @@ function App() {
   const educatorStudents = mappedRoster
     .map((item) => item.student)
     .filter((person, index, list) => person && list.findIndex((row) => Number(row.id) === Number(person.id)) === index);
+  const learnerTeachers = mappedRoster
+    .map((item) => item.teacher)
+    .filter((person, index, list) => person && list.findIndex((row) => Number(row.id) === Number(person.id)) === index);
   const studentMappings = new Map();
   const teacherMappings = new Map();
   mappedRoster.forEach((item) => {
@@ -774,7 +780,7 @@ function App() {
   const currentUserRole = String(currentUser?.role || "").toLowerCase();
   const [nowTick, setNowTick] = useState(() => Date.now());
   const isAdmin = isPrivilegedAccount(currentUserRole);
-  const canScheduleClasses = currentUserRole === "teacher" || isAdmin;
+  const canScheduleClasses = ["student", "teacher"].includes(currentUserRole) || isAdmin;
   const learnerName = currentUser?.full_name || currentUser?.name || "Learner";
   const roleLabel = formatPortalRoleLabel(currentUserRole || activePortalRole);
   const isAccountsPortal = activePortalRole === "accounts";
@@ -793,7 +799,7 @@ function App() {
   const showPrivilegedWorkspaceTabs = Boolean(currentUser) && isAdmin;
   const showStudentSupportContent = !showAccountsDashboard && !isAdmin && portalScreen === "login";
   const isStudentLoginView = activePortalRole === "student" && portalScreen === "login";
-  const isStudentWorkspaceView = ["student", "teacher"].includes(activePortalRole) && ["dashboard", "live", "schedule"].includes(portalScreen);
+  const isStudentWorkspaceView = ["student", "teacher"].includes(activePortalRole) && ["dashboard", "live", "schedule", "history"].includes(portalScreen);
   const isEducatorWorkspace = Boolean(currentUser) && activePortalRole === "teacher" && isStudentWorkspaceView;
   const portalPreviewLabel = isAccountsPortal ? "Accounts workspace" : `${formatPortalRoleLabel(activePortalRole)} portal`;
   const portalLoginLabel = isAccountsPortal ? "accounts / admin" : activeSignInProfile.badgeText;
@@ -817,6 +823,9 @@ function App() {
     }
     if (portalScreen === "schedule") {
       return "Schedule class";
+    }
+    if (portalScreen === "history") {
+      return "Scheduled history";
     }
     if (portalScreen === "dashboard") {
       return "Classes";
@@ -921,6 +930,12 @@ function App() {
     const timer = window.setInterval(() => setNowTick(Date.now()), 15000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (historyMonths.length && !historyMonths.includes(historyMonth)) {
+      setHistoryMonth(historyMonths[0]);
+    }
+  }, [historyMonth, historyMonths.join(",")]);
 
   useEffect(() => {
     if (portalScreen !== "meet" || !activeMeeting) {
@@ -1103,6 +1118,9 @@ function App() {
         if (activeAuthRole === "accounts") {
           goToSignInRoute("accounts");
           setPortalScreen("accounts-dashboard");
+        } else if (["student", "teacher"].includes(activeAuthRole)) {
+          goToSignInRoute(activeAuthRole);
+          setPortalScreen("dashboard");
         } else {
           goToSignInRoute("student");
           setPortalScreen("admin-dashboard");
@@ -1361,11 +1379,13 @@ function App() {
       return;
     }
     const isGroup = meetingKind === "m2m";
-    const studentIds = (isGroup ? meetingStudentIds : [Number(meetingStudentId)])
+    const studentIds = (currentUserRole === "student" ? [Number(currentUser.id)] : (isGroup ? meetingStudentIds : [Number(meetingStudentId)]))
       .map((id) => Number(id))
       .filter((id) => Number.isFinite(id) && id > 0);
     const teacherIds = (
-      isGroup
+      currentUserRole === "student"
+        ? [Number(meetingTeacherId)]
+        : isGroup
         ? (isAdmin ? meetingTeacherIds : [currentUser.id, ...meetingTeacherIds])
         : [isAdmin ? Number(meetingTeacherId) : currentUser.id]
     )
@@ -1700,13 +1720,18 @@ function App() {
 
   function renderScheduleForm() {
     const studentOptions = currentUserRole === "teacher" ? educatorStudents : directoryStudents;
+    const teacherOptions = currentUserRole === "student" ? learnerTeachers : directoryTeachers;
     return (
       <form className="mobile-form schedule-form" onSubmit={handleScheduleMeeting}>
-        <label htmlFor="scheduleMeetingKind">Call type</label>
-        <select id="scheduleMeetingKind" value={meetingKind} onChange={(event) => setMeetingKind(event.target.value)}>
-          <option value="o2o">1 to 1</option>
-          <option value="m2m">Many to many</option>
-        </select>
+        {currentUserRole !== "student" ? (
+          <>
+            <label htmlFor="scheduleMeetingKind">Call type</label>
+            <select id="scheduleMeetingKind" value={meetingKind} onChange={(event) => setMeetingKind(event.target.value)}>
+              <option value="o2o">1 to 1</option>
+              <option value="m2m">Many to many</option>
+            </select>
+          </>
+        ) : null}
         <label htmlFor="scheduleMeetingTitle">Title</label>
         <input id="scheduleMeetingTitle" value={meetingTitle} onChange={(event) => setMeetingTitle(event.target.value)} placeholder="Maths doubt session" />
         <label htmlFor="scheduleMeetingStart">Start</label>
@@ -1719,7 +1744,15 @@ function App() {
           <option value="weekly">Weekly</option>
         </select>
         {meetingRecurrence === "weekly" ? <><label htmlFor="scheduleMeetingOccurrences">Occurrences</label><input id="scheduleMeetingOccurrences" type="number" min="2" max="52" value={meetingOccurrences} onChange={(event) => setMeetingOccurrences(event.target.value)} /></> : null}
-        {meetingKind === "o2o" ? (
+        {currentUserRole === "student" ? (
+          <>
+            <label htmlFor="scheduleMeetingTeacher">Educator</label>
+            <select id="scheduleMeetingTeacher" value={meetingTeacherId} onChange={(event) => setMeetingTeacherId(event.target.value)} required>
+              <option value="">{teacherOptions.length ? "Select your educator" : "No educator mapped"}</option>
+              {teacherOptions.map((user) => <option key={user.id} value={user.id}>{user.full_name}</option>)}
+            </select>
+          </>
+        ) : meetingKind === "o2o" ? (
           <>
             <label htmlFor="scheduleMeetingStudent">Student</label>
             <select id="scheduleMeetingStudent" value={meetingStudentId} onChange={(event) => setMeetingStudentId(event.target.value)} required>
@@ -1765,10 +1798,12 @@ function App() {
             ) : null}
           </>
         )}
-        {!studentOptions.length ? (
+        {currentUserRole === "student" && !teacherOptions.length ? (
+          <p className="schedule-empty">Ask your educator to map your account before scheduling.</p>
+        ) : currentUserRole !== "student" && !studentOptions.length ? (
           <p className="schedule-empty">Map a student with this educator first, then return here to set the class time.</p>
         ) : null}
-        <button className="button portal-button blue" type="submit" disabled={!studentOptions.length}>Save class</button>
+        <button className="button portal-button blue" type="submit" disabled={currentUserRole === "student" ? !teacherOptions.length : !studentOptions.length}>Save class</button>
       </form>
     );
   }
@@ -2814,12 +2849,12 @@ function App() {
           </section>
         ) : showPortalPreviewSection ? (
         <section className={`section portal-section${isStudentLoginView ? " student-portal-section" : ""}${activePortalRole === "teacher" && portalScreen === "login" ? " educator-portal-section" : ""}${activePortalRole === "teacher" && isStudentWorkspaceView ? " educator-workspace-section" : ""}${isStudentWorkspaceView ? " student-workspace-section" : ""}`} id="portal">
-          {isEducatorWorkspace ? (
+          {isEducatorWorkspace || (isStudentWorkspaceView && activePortalRole === "student") ? (
             <div className="educator-workspace-toolbar">
               <button className="educator-workspace-brand" type="button" onClick={goToHomePage}>crablearn.in</button>
               <a href="#about" onClick={(event) => handleHomeHashNav(event, "about")}>About</a>
               <div className="educator-workspace-account">
-                <span>Educator signed in</span>
+                <span>{isEducatorWorkspace ? "Educator signed in" : "Student signed in"}</span>
                 <strong>{`Welcome back, ${learnerName}.`}</strong>
                 <button type="button" onClick={handleLogout}>Sign out</button>
               </div>
@@ -2841,9 +2876,10 @@ function App() {
                 <>
                   <button className={`portal-tab${portalScreen === "dashboard" ? " active" : ""}`} type="button" onClick={() => setPortalScreen("dashboard")}>Classes</button>
                   <button className={`portal-tab${portalScreen === "live" ? " active" : ""}`} type="button" onClick={() => setPortalScreen("live")}>Join</button>
-                  {canScheduleClasses && activePortalRole === "teacher" ? (
+                  {canScheduleClasses ? (
                     <button className={`portal-tab${portalScreen === "schedule" ? " active" : ""}`} type="button" onClick={() => setPortalScreen("schedule")}>Schedule</button>
                   ) : null}
+                  <button className={`portal-tab${portalScreen === "history" ? " active" : ""}`} type="button" onClick={() => setPortalScreen("history")}>History</button>
                 </>
               ) : null}
             </div>
@@ -3062,6 +3098,49 @@ function App() {
                       <button className="bottom-link" type="button" onClick={() => setPortalScreen("schedule")}>Schedule</button>
                     ) : null}
                   </div>
+                </section>
+              ) : null}
+
+              {portalScreen === "history" ? (
+                <section className="mobile-screen scheduled-history-screen">
+                  <div className="portal-topbar centered student-workspace-topbar">
+                    <span>Menu</span>
+                    <div>
+                      <strong>Scheduled history</strong>
+                      <small>Previous months</small>
+                    </div>
+                  </div>
+                  <article className="mobile-card class-card">
+                    <div className="card-header-line">
+                      <span className="badge">Previous month</span>
+                    </div>
+                    {historyMonths.length ? (
+                      <>
+                        <label htmlFor="historyMonth">Choose a month</label>
+                        <select id="historyMonth" value={historyMonth} onChange={(event) => setHistoryMonth(event.target.value)}>
+                          {historyMonths.map((month) => (
+                            <option key={month} value={month}>
+                              {new Date(`${month}-01T00:00:00`).toLocaleString("en-IN", { month: "long", year: "numeric" })}
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    ) : <p>No scheduled history is available.</p>}
+                  </article>
+                  {historyMonth ? (
+                    <article className="mobile-card class-card">
+                      <h3>{new Date(`${historyMonth}-01T00:00:00`).toLocaleString("en-IN", { month: "long", year: "numeric" })} classes</h3>
+                      <ul className="roster-list">
+                        {classHistory.filter((session) => session.month_key === historyMonth).map((session) => (
+                          <li key={session.id}>
+                            <strong>{session.subject || session.mode_label || "Junnu class"}</strong>
+                            <span>{session.mode_label || "1 to 1"} · {formatClassWhen(session.starts_at)} · {session.platform}</span>
+                            <span>{sessionPeopleLabel(session)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </article>
+                  ) : null}
                 </section>
               ) : null}
 

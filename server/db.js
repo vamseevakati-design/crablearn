@@ -542,12 +542,16 @@ export function getClassesForUser(user) {
     pending = Math.max(eligible - completed, 0);
   }
 
+  const visibleSessions = sessions.filter((item) => item.status !== "cancelled");
   return {
     month_key: monthKey,
     month_label: monthLabel,
     eligible,
     pending,
-    sessions: sessions.filter((item) => item.status !== "cancelled")
+    sessions: visibleSessions.filter((item) => item.month_key === monthKey),
+    history: visibleSessions
+      .filter((item) => item.month_key && item.month_key < monthKey)
+      .sort((a, b) => String(b.starts_at).localeCompare(String(a.starts_at)))
   };
 }
 

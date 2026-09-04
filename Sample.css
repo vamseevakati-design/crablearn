@@ -2205,6 +2205,26 @@ h1 {
   font-size: 0.98rem;
 }
 
+.scheduled-history-screen .mobile-card + .mobile-card {
+  margin-top: 0.8rem;
+}
+
+.scheduled-history-screen select {
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.78rem 0.85rem;
+  border: 1px solid rgba(45, 125, 255, 0.2);
+  border-radius: 0.7rem;
+  background: #fffaf2;
+  color: var(--ink);
+  font: inherit;
+}
+
+.scheduled-history-screen select:focus {
+  outline: 2px solid rgba(217, 181, 91, 0.55);
+  border-color: #c49d40;
+}
+
 .student-workspace-phone .fee-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
@@ -3793,6 +3813,196 @@ h1 {
 
   .educator-workspace-section .student-workspace-mini-stats {
     min-width: 0;
+  }
+}
+
+/* Signed-in student dashboard: keep the educator composition, with a warmer study-room palette. */
+.student-workspace-section:not(.educator-workspace-section) {
+  width: min(94vw, 1320px);
+  padding: 0.35rem;
+  border: 1px solid #c8e6d8;
+  border-radius: 8px;
+  background: #fffaf0;
+  box-shadow: 0 22px 55px rgba(31, 111, 91, 0.13);
+}
+
+.student-workspace-section:not(.educator-workspace-section)::before {
+  display: none;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .educator-workspace-toolbar {
+  border-color: #b8dfce;
+  background: #fffef9;
+  color: #146c5a;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .educator-workspace-brand,
+.student-workspace-section:not(.educator-workspace-section) .educator-workspace-section .section-kicker,
+.student-workspace-section:not(.educator-workspace-section) .section-kicker {
+  color: #146c5a;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .educator-workspace-toolbar > a,
+.student-workspace-section:not(.educator-workspace-section) .educator-workspace-account strong {
+  color: #3e796b;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .educator-workspace-account span {
+  border-color: #9ed4bd;
+  background: #e7f7ee;
+  color: #126b54;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .section-heading-row {
+  margin-bottom: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #c8e6d8;
+  border-radius: 6px;
+  background: #fffef9;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .section-heading-row h2 {
+  color: #28564b;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .portal-tabs {
+  padding: 0.3rem;
+  border: 1px solid #b8dfce;
+  border-radius: 6px;
+  background: #edf9f2;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .portal-tab {
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #d9573f;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .portal-tab.active {
+  background: #f06b4f;
+  color: #fffef9;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .student-workspace-phone {
+  max-width: none;
+  padding: 0.75rem;
+  border-radius: 6px;
+  background: #174f4a;
+  box-shadow: 0 18px 42px rgba(23, 79, 74, 0.2);
+}
+
+.student-workspace-section:not(.educator-workspace-section) .student-dashboard-screen {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(16rem, 0.75fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: start;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .student-workspace-topbar,
+.student-workspace-section:not(.educator-workspace-section) .student-workspace-hero,
+.student-workspace-section:not(.educator-workspace-section) .bottom-nav {
+  grid-column: 1 / -1;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .student-workspace-topbar {
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  background: #146c5a;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .student-workspace-hero {
+  margin: 0;
+  padding: 0.7rem 1rem;
+  border-radius: 5px;
+  background: linear-gradient(105deg, #f06b4f, #e38b45);
+}
+
+.student-workspace-section:not(.educator-workspace-section) .student-workspace-hero h3 {
+  max-width: 38rem;
+  margin: 0.2rem 0 0;
+  color: #fffaf0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+}
+
+.student-workspace-section:not(.educator-workspace-section) .student-workspace-hero .section-kicker {
+  color: #fff1bd;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .mobile-card {
+  margin-top: 0;
+  padding: 0.8rem;
+  border: 1px solid #c8e6d8;
+  border-radius: 5px;
+  background: #fffef9;
+  color: #28564b;
+  box-shadow: 0 2px 8px rgba(31, 111, 91, 0.12);
+}
+
+.student-workspace-section:not(.educator-workspace-section) .roster-list li {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(14rem, 1.4fr) auto;
+  align-items: center;
+  gap: 0.22rem 0.75rem;
+  margin-bottom: 0.35rem;
+  padding: 0.46rem 0.65rem;
+  border-color: #c8e6d8;
+  border-radius: 4px;
+  background: #f7fcf8;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .roster-list strong {
+  color: #175e50;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .roster-list span {
+  color: #4c7d70;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .roster-list .session-join-row {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .bottom-nav {
+  margin-top: 0;
+  padding: 0.35rem;
+  border: 1px solid #278472;
+  border-radius: 5px;
+  background: #146c5a;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .bottom-link {
+  color: #dff6e8;
+}
+
+.student-workspace-section:not(.educator-workspace-section) .bottom-link.active {
+  background: #ffd166;
+  color: #315747;
+}
+
+@media (max-width: 760px) {
+  .student-workspace-section:not(.educator-workspace-section) {
+    width: calc(100% - 1.25rem);
+  }
+
+  .student-workspace-section:not(.educator-workspace-section) .student-dashboard-screen {
+    grid-template-columns: 1fr;
+  }
+
+  .student-workspace-section:not(.educator-workspace-section) .roster-list li {
+    display: flex;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .student-workspace-section:not(.educator-workspace-section) .roster-list .session-join-row {
+    margin-top: 0.35rem;
+    white-space: normal;
   }
 }
 
