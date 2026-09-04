@@ -801,6 +801,7 @@ function App() {
   const isStudentLoginView = activePortalRole === "student" && portalScreen === "login";
   const isStudentWorkspaceView = ["student", "teacher"].includes(activePortalRole) && ["dashboard", "live", "schedule", "history"].includes(portalScreen);
   const isEducatorWorkspace = Boolean(currentUser) && activePortalRole === "teacher" && isStudentWorkspaceView;
+  const isSignedInWorkspace = Boolean(currentUser) && isStudentWorkspaceView;
   const portalPreviewLabel = isAccountsPortal ? "Accounts workspace" : `${formatPortalRoleLabel(activePortalRole)} portal`;
   const portalLoginLabel = isAccountsPortal ? "accounts / admin" : activeSignInProfile.badgeText;
   const showGlobalHomeButton = showPortalSection || portalScreen !== "home";
@@ -1816,7 +1817,7 @@ function App() {
         </button>
       ) : null}
 
-      {!isEducatorWorkspace ? <header className="site-header" id="top">
+      {!isSignedInWorkspace ? <header className="site-header" id="top">
         <div className="top-nav">
           <button className="brand-block" type="button" onClick={goToHomePage}>
             <span className="brand-word">crab</span>
