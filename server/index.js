@@ -1140,10 +1140,11 @@ app.post("/api/callback-requests", (req, res) => {
 });
 
 app.post("/api/accounts/import", async (req, res) => {
-  const { workbookPath, skipSheets } = req.body ?? {};
+  const { workbookPath, workbookBase64, skipSheets } = req.body ?? {};
 
   try {
-    const result = await importWorkbookToAccounts(workbookPath, { skipSheets: skipSheets || [] });
+    const workbookBuffer = workbookBase64 ? Buffer.from(String(workbookBase64), "base64") : null;
+    const result = await importWorkbookToAccounts(workbookPath, { skipSheets: skipSheets || [], workbookBuffer });
     return res.status(201).json({
       ok: true,
       message: `Imported ${result.rowsImported} rows from accounts workbook.`,

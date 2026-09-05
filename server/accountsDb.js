@@ -374,15 +374,15 @@ function resolveWorkbookPath(workbookPath) {
   return path.isAbsolute(input) ? input : path.resolve(workspaceRoot, input);
 }
 
-export async function importWorkbookToAccounts(workbookPath, { skipSheets = [] } = {}) {
-  const absolutePath = resolveWorkbookPath(workbookPath);
-  if (!fs.existsSync(absolutePath)) {
+export async function importWorkbookToAccounts(workbookPath, { skipSheets = [], workbookBuffer = null } = {}) {
+  const absolutePath = workbookBuffer ? String(workbookPath || "uploaded workbook") : resolveWorkbookPath(workbookPath);
+  if (!workbookBuffer && !fs.existsSync(absolutePath)) {
     throw new Error(`Workbook not found at ${absolutePath}`);
   }
 
   await ensureAccountsSchema();
 
-  const workbook = XLSX.readFile(absolutePath);
+  const workbook = workbookBuffer ? XLSX.read(workbookBuffer) : XLSX.readFile(absolutePath);
   const entries = [];
   const jananiEntries = parseJananiAccounts(workbook.Sheets["Janani Accounts"]);
   const skipSet = new Set((skipSheets || []).map(s => String(s).trim()));
