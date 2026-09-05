@@ -26,12 +26,33 @@ const monthNames = {
 
 let pool;
 
+const poolOptions = {
+  max: Number(process.env.PGPOOL_MAX || 1),
+  idleTimeoutMillis: Number(process.env.PGPOOL_IDLE_TIMEOUT || 5000),
+  connectionTimeoutMillis: Number(process.env.PGPOOL_CONNECTION_TIMEOUT || 10000)
+};
+
+function normalizeConnectionString(value) {
+  const raw = String(value || "").trim();
+  if (!raw || !/supabase\.co|supabase\.com/i.test(raw)) return raw;
+  try {
+    const url = new URL(raw);
+    if (/pooler\.supabase\.com$/i.test(url.hostname) && url.port === "5432") {
+      url.port = "6543";
+    }
+    url.searchParams.set("pgbouncer", "true");
+    return url.toString();
+  } catch (_error) {
+    return raw;
+  }
+}
+
 function getPool() {
   if (pool) {
     return pool;
   }
 
-  const connectionString = String(process.env.DATABASE_URL || process.env.POSTGRES_URL || "").trim();
+  const connectionString = normalizeConnectionString(process.env.DATABASE_URL || process.env.POSTGRES_URL);
   if (connectionString) {
     const needsSsl =
       process.env.PGSSLMODE === "require" ||
@@ -39,6 +60,7 @@ function getPool() {
       /\.neon\.tech|\.supabase\.co|\.render\.com|\.vercel-storage\.com/i.test(connectionString);
     pool = new Pool({
       connectionString,
+      ...poolOptions,
       ssl: needsSsl ? { rejectUnauthorized: false } : undefined
     });
     return pool;
@@ -53,6 +75,7 @@ function getPool() {
   }
 
   pool = new Pool({
+    ...poolOptions,
     host,
     port: Number(process.env.PGPORT || 5432),
     user: process.env.PGUSER || "crablearn",
