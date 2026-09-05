@@ -15,6 +15,7 @@ import {
   junnuSignal
 } from "./junnu.js";
 import { attachJunnuWs } from "./junnuWs.js";
+import { authenticateAccount, closeAuthDb, ensureAuthSchema, registerAccount } from "./authDb.js";
 import {
   authenticateStudent,
   changeStudentPassword,
@@ -214,14 +215,17 @@ function requirePrivilegedActor(req, res) {
   return actor;
 }
 
-function requireJunnuActor(req, res) {
+async function requireJunnuActor(req, res) {
   const { identifier, phone, password } = req.body ?? {};
   const loginId = String(phone || identifier || "").trim();
   if (!loginId || !password) {
     res.status(400).json({ ok: false, message: "Sign in is required to join Junnu." });
     return null;
   }
-  const actor = authenticateStudent(loginId, String(password));
+  const requestedRole = String(req.body?.role || "").trim().toLowerCase();
+  const actor = ["student", "teacher"].includes(requestedRole)
+    ? await authenticateAccount(loginId, String(password), requestedRole).catch(() => null)
+    : authenticateStudent(loginId, String(password));
   if (!actor) {
     res.status(401).json({ ok: false, message: "Invalid login credentials." });
     return null;
@@ -380,7 +384,7 @@ app.get("/api/health", (_req, res) => {
   }
 });
 
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   const { phone, identifier, password, role } = req.body ?? {};
   const loginId = String(phone || identifier || "").trim();
 
@@ -389,6 +393,18 @@ app.post("/api/auth/login", (req, res) => {
   }
 
   try {
+    if (["student", "teacher"].includes(String(role || "").trim().toLowerCase())) {
+      return authenticateAccount(loginId, String(password), String(role).trim().toLowerCase())
+        .then((account) => {
+          if (!account) return res.status(401).json({ ok: false, message: "Invalid login credentials." });
+          if (account.status !== "approved") return res.status(403).json({ ok: false, message: "Your account is awaiting approval from admin or supervisor." });
+          return res.json({ ok: true, message: `Welcome back, ${account.full_name}.`, student: sanitizeStudent(account), assignments: getAssignmentsForUser(account), classes: getClassesForUser(account) });
+        })
+        .catch((error) => {
+          console.error("PostgreSQL login error:", error);
+          return res.status(503).json({ ok: false, message: "PostgreSQL authentication is unavailable." });
+        });
+    }
     console.log("Login attempt with identifier:", loginId);
     const student = authenticateStudent(loginId, String(password));
 
@@ -454,6 +470,12 @@ app.post("/api/auth/register", async (req, res) => {
 
   try {
     const allowedRole = ["student", "teacher", "engineer"].includes(normalizedRole) ? normalizedRole : "student";
+    if (["student", "teacher"].includes(allowedRole)) {
+      const created = await registerAccount({ fullName: normalizedFullName, firstName, lastName, email, phone, password, dateOfBirth, gender, addressLine1, addressLine2, country, postalCode, qualification, specialization, role: allowedRole });
+      await triggerOnboardingWorkflow({ student: created });
+      const { contacts } = queueApprovalNotification(created);
+      return res.status(201).json({ ok: true, message: `Account request created for ${created.full_name}. Approval notices sent to admin ${contacts.admin.phone} / ${contacts.admin.email} and supervisor ${contacts.supervisor.phone} / ${contacts.supervisor.email}.`, student: sanitizeStudent(created) });
+    }
     const created = createStudent({
       fullName: normalizedFullName,
       firstName,
@@ -724,8 +746,8 @@ app.post("/api/meetings", async (req, res) => {
   }
 });
 
-app.post("/api/junnu/join", (req, res) => {
-  const actor = requireJunnuActor(req, res);
+app.post("/api/junnu/join", async (req, res) => {
+  const actor = await requireJunnuActor(req, res);
   if (!actor) {
     return;
   }
@@ -749,8 +771,8 @@ app.post("/api/junnu/join", (req, res) => {
   }
 });
 
-app.post("/api/classes/start", (req, res) => {
-  const actor = requireJunnuActor(req, res);
+app.post("/api/classes/start", async (req, res) => {
+  const actor = await requireJunnuActor(req, res);
   if (!actor) {
     return;
   }
@@ -759,8 +781,8 @@ app.post("/api/classes/start", (req, res) => {
   return res.json({ ok: true, classes: getClassesForUser(actor) });
 });
 
-app.post("/api/junnu/signal", (req, res) => {
-  const actor = requireJunnuActor(req, res);
+app.post("/api/junnu/signal", async (req, res) => {
+  const actor = await requireJunnuActor(req, res);
   if (!actor) {
     return;
   }
@@ -785,8 +807,8 @@ app.post("/api/junnu/signal", (req, res) => {
   }
 });
 
-app.post("/api/junnu/poll", (req, res) => {
-  const actor = requireJunnuActor(req, res);
+app.post("/api/junnu/poll", async (req, res) => {
+  const actor = await requireJunnuActor(req, res);
   if (!actor) {
     return;
   }
@@ -809,8 +831,8 @@ app.post("/api/junnu/poll", (req, res) => {
   }
 });
 
-app.post("/api/junnu/leave", (req, res) => {
-  const actor = requireJunnuActor(req, res);
+app.post("/api/junnu/leave", async (req, res) => {
+  const actor = await requireJunnuActor(req, res);
   if (!actor) {
     return;
   }
@@ -824,8 +846,8 @@ app.post("/api/junnu/leave", (req, res) => {
   return res.json({ ok: true, ...junnuLeave({ roomId, peerId: req.body?.peerId }) });
 });
 
-app.post("/api/junnu/snapshot", (req, res) => {
-  const actor = requireJunnuActor(req, res);
+app.post("/api/junnu/snapshot", async (req, res) => {
+  const actor = await requireJunnuActor(req, res);
   if (!actor) {
     return;
   }
@@ -861,8 +883,8 @@ app.post("/api/junnu/snapshot", (req, res) => {
   });
 });
 
-app.post("/api/junnu/file", (req, res) => {
-  const actor = requireJunnuActor(req, res);
+app.post("/api/junnu/file", async (req, res) => {
+  const actor = await requireJunnuActor(req, res);
   if (!actor) {
     return;
   }
@@ -1395,6 +1417,7 @@ function start() {
   (async () => {
     try {
       await ensureSchema();
+      await ensureAuthSchema();
       try {
         await ensureAccountsSchema();
       } catch (accountsError) {
@@ -1417,6 +1440,7 @@ function start() {
     } catch (error) {
       console.error("Failed to start API:", error.message);
       closeDb();
+      closeAuthDb();
       closeAccountsDb();
       process.exit(1);
     }
@@ -1428,6 +1452,7 @@ export async function ensureReady() {
   if (!readyPromise) {
     readyPromise = (async () => {
       await ensureSchema();
+      await ensureAuthSchema();
       try {
         await ensureAccountsSchema();
       } catch (accountsError) {

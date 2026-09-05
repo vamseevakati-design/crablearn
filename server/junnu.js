@@ -1,6 +1,7 @@
 import {
   addJunnuSnapshot,
   getClassesForUser,
+  getAssignmentsForUser,
   listJunnuSnapshots,
   loadJunnuBoard,
   saveJunnuBoard
@@ -20,7 +21,13 @@ export function isAllowedJunnuRoomActor(actor, roomId) {
     return true;
   }
   const roomKey = String(roomId || "").trim();
-  const sessions = getClassesForUser(actor)?.sessions || [];
+  const classes = getClassesForUser(actor) || {};
+  const sessions = [...(classes.sessions || []), ...(classes.history || [])];
+  const assignments = getAssignmentsForUser(actor) || [];
+  const directRoom = roomKey.match(/^Direct-(\d+)$/i);
+  if (directRoom && assignments.some((item) => Number(item.id) === Number(directRoom[1]))) {
+    return true;
+  }
   for (const session of sessions) {
     const directId = session?.meeting_id || session?.id;
     if (!directId) {
