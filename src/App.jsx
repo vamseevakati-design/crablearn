@@ -1187,9 +1187,26 @@ function App() {
   async function handleRegisterSubmit(event) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const fullName = String(formData.get("fullName") || "");
+    const firstName = String(formData.get("first_name") || "").trim();
+    const lastName = String(formData.get("last_name") || "").trim();
+    const fullName = String(formData.get("fullName") || `${firstName} ${lastName}`).trim();
+    const email = String(formData.get("email") || "").trim();
     const phone = addCountryCode(String(formData.get("phone") || ""), String(formData.get("countryCode") || "+91"));
+    const dateOfBirth = String(formData.get("dob") || "").trim();
+    const gender = String(formData.get("gender") || "").trim();
+    const addressLine1 = String(formData.get("address_line1") || "").trim();
+    const addressLine2 = String(formData.get("address_line2") || "").trim();
+    const country = String(formData.get("country") || "").trim();
+    const postalCode = String(formData.get("postal_code") || "").trim();
+    const qualification = String(formData.get("qualification") || "").trim();
+    const specialization = String(formData.get("specialization") || "").trim();
     const password = String(formData.get("password") || "");
+    const confirmPassword = String(formData.get("confirm_password") || "");
+
+    if (confirmPassword && password !== confirmPassword) {
+      setLoginMessage("Passwords do not match.");
+      return;
+    }
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/auth/register`, {
@@ -1197,7 +1214,23 @@ function App() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ fullName, phone, password, role: signInRole })
+        body: JSON.stringify({
+          fullName,
+          firstName,
+          lastName,
+          email,
+          phone,
+          dateOfBirth,
+          gender,
+          addressLine1,
+          addressLine2,
+          country,
+          postalCode,
+          qualification,
+          specialization,
+          password,
+          role: signInRole
+        })
       });
 
       const payload = await response.json();
@@ -2538,9 +2571,44 @@ function App() {
                   </button>
                   <p className="edu-or">or</p>
                   <form className="edu-underline-form" onSubmit={handleRegisterSubmit}>
-                    <label htmlFor="educatorAuthName">Full name<span>*</span></label>
-                    <input id="educatorAuthName" name="fullName" type="text" placeholder="Your full name" required />
-                    <CountryPhoneField id="educatorAuthRegId" name="phone" label="Username or phone" placeholder="Email, username, or mobile number" />
+                    <div className="student-registration-name-grid">
+                      <div>
+                        <label htmlFor="educatorFirstName">First name<span>*</span></label>
+                        <input id="educatorFirstName" name="first_name" type="text" placeholder="First name" required />
+                      </div>
+                      <div>
+                        <label htmlFor="educatorLastName">Last name<span>*</span></label>
+                        <input id="educatorLastName" name="last_name" type="text" placeholder="Last name" required />
+                      </div>
+                    </div>
+                    <label htmlFor="educatorEmail">Email<span>*</span></label>
+                    <input id="educatorEmail" name="email" type="email" placeholder="you@example.com" required />
+                    <CountryPhoneField id="educatorAuthRegId" name="phone" label="Phone number" placeholder="Optional mobile number" />
+                    <label htmlFor="educatorQualification">Qualification<span>*</span></label>
+                    <input id="educatorQualification" name="qualification" type="text" placeholder="B.Ed, M.Sc, Ph.D, etc." required />
+                    <label htmlFor="educatorSpecialization">Subject specialization<span>*</span></label>
+                    <input id="educatorSpecialization" name="specialization" type="text" placeholder="Mathematics, Science, English" required />
+                    <label htmlFor="educatorAddressLine1">Address line 1<span>*</span></label>
+                    <input id="educatorAddressLine1" name="address_line1" type="text" placeholder="Street address" required />
+                    <label htmlFor="educatorAddressLine2">Address line 2</label>
+                    <input id="educatorAddressLine2" name="address_line2" type="text" placeholder="Apartment, area, landmark" />
+                    <div className="student-registration-name-grid">
+                      <div>
+                        <label htmlFor="educatorCountry">Country<span>*</span></label>
+                        <select id="educatorCountry" name="country" defaultValue="" required>
+                          <option value="">Select country</option>
+                          <option value="IN">India</option>
+                          <option value="US">United States</option>
+                          <option value="GB">United Kingdom</option>
+                          <option value="CA">Canada</option>
+                          <option value="AU">Australia</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="educatorPostalCode">Postal / ZIP code<span>*</span></label>
+                        <input id="educatorPostalCode" name="postal_code" type="text" placeholder="Postal code" required />
+                      </div>
+                    </div>
                     <label htmlFor="educatorAuthRegPassword">Password<span>*</span></label>
                     <div className="edu-password-row">
                       <input
@@ -2554,6 +2622,8 @@ function App() {
                         {showAuthPassword ? "Hide" : "Show"}
                       </button>
                     </div>
+                    <label htmlFor="educatorConfirmPassword">Confirm password<span>*</span></label>
+                    <input id="educatorConfirmPassword" name="confirm_password" type={showAuthPassword ? "text" : "password"} placeholder="Confirm your password" required />
                     <button className="button coral student-login-btn" type="submit">Sign up</button>
                   </form>
                   <p className="edu-legal">By clicking Continue or Sign up, you agree to Crab Learn Terms of Use and Privacy Policy.</p>
@@ -2729,9 +2799,55 @@ function App() {
                   </button>
                   <p className="edu-or">or</p>
                   <form className="edu-underline-form" onSubmit={handleRegisterSubmit}>
-                    <label htmlFor="studentAuthName">Full name<span>*</span></label>
-                    <input id="studentAuthName" name="fullName" type="text" placeholder="Your full name" required />
-                    <CountryPhoneField id="studentAuthRegId" name="phone" label="Username or phone" placeholder="Email, username, or mobile number" />
+                    <div className="student-registration-name-grid">
+                      <div>
+                        <label htmlFor="studentFirstName">First name<span>*</span></label>
+                        <input id="studentFirstName" name="first_name" type="text" placeholder="First name" required />
+                      </div>
+                      <div>
+                        <label htmlFor="studentLastName">Last name<span>*</span></label>
+                        <input id="studentLastName" name="last_name" type="text" placeholder="Last name" required />
+                      </div>
+                    </div>
+                    <label htmlFor="studentEmail">Email<span>*</span></label>
+                    <input id="studentEmail" name="email" type="email" placeholder="you@example.com" required />
+                    <CountryPhoneField id="studentAuthRegId" name="phone" label="Phone number" placeholder="Optional mobile number" />
+                    <div className="student-registration-name-grid">
+                      <div>
+                        <label htmlFor="studentDob">Date of birth</label>
+                        <input id="studentDob" name="dob" type="date" />
+                      </div>
+                      <div>
+                        <label htmlFor="studentGender">Gender</label>
+                        <select id="studentGender" name="gender" defaultValue="">
+                          <option value="">Select gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                    <label htmlFor="studentAddressLine1">Address line 1<span>*</span></label>
+                    <input id="studentAddressLine1" name="address_line1" type="text" placeholder="Street address" required />
+                    <label htmlFor="studentAddressLine2">Address line 2</label>
+                    <input id="studentAddressLine2" name="address_line2" type="text" placeholder="Apartment, area, landmark" />
+                    <div className="student-registration-name-grid">
+                      <div>
+                        <label htmlFor="studentCountry">Country<span>*</span></label>
+                        <select id="studentCountry" name="country" defaultValue="" required>
+                          <option value="">Select country</option>
+                          <option value="IN">India</option>
+                          <option value="US">United States</option>
+                          <option value="GB">United Kingdom</option>
+                          <option value="CA">Canada</option>
+                          <option value="AU">Australia</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="studentPostalCode">Postal / ZIP code<span>*</span></label>
+                        <input id="studentPostalCode" name="postal_code" type="text" placeholder="Postal code" required />
+                      </div>
+                    </div>
                     <label htmlFor="studentAuthRegPassword">Password<span>*</span></label>
                     <div className="edu-password-row">
                       <input
@@ -2745,6 +2861,8 @@ function App() {
                         {showAuthPassword ? "Hide" : "Show"}
                       </button>
                     </div>
+                    <label htmlFor="studentConfirmPassword">Confirm password<span>*</span></label>
+                    <input id="studentConfirmPassword" name="confirm_password" type={showAuthPassword ? "text" : "password"} placeholder="Confirm your password" required />
                     <button className="button coral student-login-btn" type="submit">Sign up</button>
                   </form>
                   <p className="edu-legal">By clicking Continue or Sign up, you agree to Crab Learn Terms of Use and Privacy Policy.</p>
@@ -2849,7 +2967,7 @@ function App() {
             ) : null}
           </section>
         ) : showPortalPreviewSection ? (
-        <section className={`section portal-section${isStudentLoginView ? " student-portal-section" : ""}${activePortalRole === "teacher" && portalScreen === "login" ? " educator-portal-section" : ""}${activePortalRole === "teacher" && isStudentWorkspaceView ? " educator-workspace-section" : ""}${isStudentWorkspaceView ? " student-workspace-section" : ""}`} id="portal">
+        <section className={`section portal-section${isStudentLoginView ? " student-portal-section" : ""}${isAccountsPortal && portalScreen === "login" ? " accounts-login-section" : ""}${activePortalRole === "teacher" && portalScreen === "login" ? " educator-portal-section" : ""}${activePortalRole === "teacher" && isStudentWorkspaceView ? " educator-workspace-section" : ""}${isStudentWorkspaceView ? " student-workspace-section" : ""}`} id="portal">
           {isEducatorWorkspace || (isStudentWorkspaceView && activePortalRole === "student") ? (
             <div className="educator-workspace-toolbar">
               <button className="educator-workspace-brand" type="button" onClick={goToHomePage}>crablearn.in</button>
@@ -2942,8 +3060,6 @@ function App() {
                         />
                         <label htmlFor="password">Password</label>
                         <input id="password" name="password" type="password" placeholder={activeSignInProfile.passwordPlaceholder} required />
-                        <label htmlFor="authExtraInfo">{activeSignInProfile.extraLabel}</label>
-                        <input id="authExtraInfo" name="authExtraInfo" type="text" placeholder={activeSignInProfile.extraPlaceholder} />
                         <button className="button portal-button blue" type="submit">Continue</button>
                         {!isAccountsPortal ? <button className="button ghost" type="button" onClick={() => setAuthMode("register")}>Create new account</button> : null}
                       </form>

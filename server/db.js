@@ -812,17 +812,21 @@ export function deleteAssignment(id) {
   return hydrateAssignment(removed) || removed;
 }
 
-export function createStudent({ fullName, phone, password, status = "approved", role = "student" }) {
+export function createStudent({ fullName, firstName, lastName, email, phone, dateOfBirth, gender, addressLine1, addressLine2, country, postalCode, qualification, specialization, password, status = "approved", role = "student" }) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
   const normalizedPhone = String(phone || "").trim();
   const normalizedName = String(fullName || "").trim();
   const normalizedPassword = String(password || "");
   const normalizedRole = String(role || "student").trim().toLowerCase();
 
-  if (!normalizedName || !normalizedPhone || !normalizedPassword) {
+  if (!normalizedName || (!normalizedPhone && !normalizedEmail) || !normalizedPassword) {
     throw new Error("MISSING_REQUIRED_FIELDS");
   }
 
-  const existing = allAccounts().find((student) => phoneIdentifiersMatch(student.phone, normalizedPhone));
+  const existing = allAccounts().find((student) => (
+    (normalizedPhone && phoneIdentifiersMatch(student.phone, normalizedPhone)) ||
+    (normalizedEmail && String(student.email || "").trim().toLowerCase() === normalizedEmail)
+  ));
   if (existing) {
     throw new Error("UNIQUE constraint failed: students.phone");
   }
@@ -830,8 +834,19 @@ export function createStudent({ fullName, phone, password, status = "approved", 
   const student = {
     id: data.nextId++,
     full_name: normalizedName,
-    phone: normalizedPhone,
-    email: null,
+    first_name: String(firstName || "").trim() || normalizedName.split(/\s+/)[0],
+    last_name: String(lastName || "").trim() || normalizedName.split(/\s+/).slice(1).join(" "),
+    phone: normalizedPhone || null,
+    email: normalizedEmail || null,
+    dob: String(dateOfBirth || "").trim() || null,
+    gender: String(gender || "").trim() || null,
+    address_line1: String(addressLine1 || "").trim() || null,
+    address_line2: String(addressLine2 || "").trim() || null,
+    country_code: String(country || "").trim().toUpperCase() || null,
+    country: String(country || "").trim().toUpperCase() || null,
+    postal_code: String(postalCode || "").trim() || null,
+    qualification: String(qualification || "").trim() || null,
+    specialization: String(specialization || "").trim() || null,
     password: normalizedPassword,
     status: String(status || "approved").trim().toLowerCase(),
     role: normalizedRole || "student",

@@ -237,10 +237,17 @@ async function ensureSchema() {
     CREATE TABLE IF NOT EXISTS students (
       student_id INTEGER PRIMARY KEY AUTOINCREMENT,
       full_name TEXT NOT NULL,
-      phone TEXT NOT NULL UNIQUE,
+      phone TEXT UNIQUE,
       password TEXT NOT NULL,
       email TEXT UNIQUE,
       country_code TEXT,
+      first_name TEXT,
+      last_name TEXT,
+      dob DATE,
+      gender TEXT,
+      address_line1 TEXT,
+      address_line2 TEXT,
+      postal_code TEXT,
       status TEXT NOT NULL DEFAULT 'approved',
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -421,18 +428,46 @@ app.post("/api/auth/login", (req, res) => {
 });
 
 app.post("/api/auth/register", async (req, res) => {
-  const { fullName, phone, password, role } = req.body ?? {};
+  const {
+    fullName,
+    firstName,
+    lastName,
+    email,
+    phone,
+    dateOfBirth,
+    gender,
+    addressLine1,
+    addressLine2,
+    country,
+    postalCode,
+    qualification,
+    specialization,
+    password,
+    role
+  } = req.body ?? {};
 
-  if (!fullName || !phone || !password) {
-    return res.status(400).json({ ok: false, message: "fullName, phone, and password are required." });
+  const normalizedRole = String(role || "student").trim().toLowerCase();
+  const normalizedFullName = String(fullName || `${firstName || ""} ${lastName || ""}`).trim();
+  if (!normalizedFullName || !password || (["student", "teacher"].includes(normalizedRole) && !email) || (normalizedRole === "teacher" && (!qualification || !specialization))) {
+    return res.status(400).json({ ok: false, message: "Name, email, and password are required. Teachers must also provide qualification and specialization." });
   }
 
   try {
-    const normalizedRole = String(role || "student").trim().toLowerCase();
     const allowedRole = ["student", "teacher", "engineer"].includes(normalizedRole) ? normalizedRole : "student";
     const created = createStudent({
-      fullName: String(fullName).trim(),
-      phone: String(phone).trim(),
+      fullName: normalizedFullName,
+      firstName,
+      lastName,
+      email,
+      phone,
+      dateOfBirth,
+      gender,
+      addressLine1,
+      addressLine2,
+      country,
+      postalCode,
+      qualification,
+      specialization,
       password: String(password),
       role: allowedRole,
       status: "pending"
@@ -519,7 +554,7 @@ app.post("/api/admin/users", (req, res) => {
   const { fullName, phone, password, role = "student", status = "approved" } = req.body ?? {};
 
   if (!fullName || !phone || !password) {
-    return res.status(400).json({ ok: false, message: "fullName, phone, and password are required." });
+    return res.status(400).json({ ok: false, message: "Name, email, and password are required." });
   }
 
   try {
@@ -531,7 +566,7 @@ app.post("/api/admin/users", (req, res) => {
     });
   } catch (error) {
     if (String(error.message).includes("UNIQUE constraint failed")) {
-      return res.status(409).json({ ok: false, message: "A user with this phone already exists." });
+      return res.status(409).json({ ok: false, message: "A user with this phone or email already exists." });
     }
     if (String(error.message) === "MISSING_REQUIRED_FIELDS") {
       return res.status(400).json({ ok: false, message: "fullName, phone, and password are required." });
