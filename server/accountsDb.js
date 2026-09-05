@@ -88,11 +88,12 @@ function normalizeSheetRows(sheet) {
     return [];
   }
 
-  const firstRow = rows[0];
+  const headerIndex = rows.findIndex((row) => Object.values(row).some((cell) => normalizeKey(cell).toLowerCase() === "s no"));
+  const firstRow = headerIndex >= 0 ? rows[headerIndex] : rows[0];
   const keys = Object.keys(firstRow);
   const hasSyntheticKeys = keys.every((key) => key.startsWith("__EMPTY"));
 
-  if (!hasSyntheticKeys) {
+  if (!hasSyntheticKeys && headerIndex < 0) {
     return rows
       .map((row, index) => ({ ...row, __sourceRowIndex: index + 2 }))
       .filter((row) => Object.values(row).some((cell) => String(cell || "").trim() !== ""));
@@ -107,9 +108,9 @@ function normalizeSheetRows(sheet) {
   }
 
   return rows
-    .slice(1)
+    .slice(headerIndex >= 0 ? headerIndex + 1 : 1)
     .map((row, index) => {
-      const mapped = { __sourceRowIndex: index + 3 };
+      const mapped = { __sourceRowIndex: index + (headerIndex >= 0 ? headerIndex + 3 : 3) };
       for (const key of keys) {
         const targetKey = headerMap[key];
         if (targetKey) {
@@ -150,7 +151,19 @@ function parseMonth(sheetName) {
 
   const words = normalized.toLowerCase().match(/([a-z]+)\s+(\d{4})/);
   if (words) {
-    const month = monthNames[words[1]];
+    const month = monthNames[words[1]] || {
+      jan: 1,
+      feb: 2,
+      mar: 3,
+      apr: 4,
+      jun: 6,
+      jul: 7,
+      aug: 8,
+      sep: 9,
+      oct: 10,
+      nov: 11,
+      dec: 12
+    }[words[1]];
     const year = Number(words[2]);
     if (month && Number.isFinite(year)) {
       const monthKey = `${year}-${String(month).padStart(2, "0")}`;
@@ -303,9 +316,57 @@ export async function ensureAccountsSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE (month_key, sheet_name, source_row_index)
     );
+    CREATE TABLE IF NOT EXISTS janani_accounts (
+      id BIGSERIAL PRIMARY KEY,
+      month_key TEXT NOT NULL,
+      month_label TEXT NOT NULL,
+      month_date DATE NOT NULL,
+      person_name TEXT,
+      amount NUMERIC(12,2),
+      salary NUMERIC(12,2),
+      janani_share NUMERIC(12,2),
+      crablearn_share NUMERIC(12,2),
+      crablearn_account NUMERIC(12,2),
+      source_row_index INTEGER NOT NULL,
+      raw_row JSONB,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (month_key, source_row_index)
+    );
   `;
 
   await getPool().query(sql);
+}
+
+function parseJananiAccounts(sheet) {
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
+  const monthMap = { DEC: ["2025-12", "December 2025"], JAN: ["2026-01", "January 2026"], FEB: ["2026-02", "February 2026"] };
+  let month = null;
+  const entries = [];
+  rows.forEach((row, index) => {
+    const section = normalizeKey(row[1]).toUpperCase();
+    if (monthMap[section]) {
+      month = monthMap[section];
+      return;
+    }
+    const personName = normalizeKey(row[0]);
+    if (!month || !personName || /^(CO fee|total)$/i.test(personName)) return;
+    const values = row.slice(1).map((value) => toNumber(value));
+    if (!values.some((value) => value !== null)) return;
+    entries.push({
+      monthKey: month[0],
+      monthLabel: month[1],
+      monthDate: `${month[0]}-01`,
+      personName,
+      amount: values[0],
+      salary: values[2],
+      jananiShare: values[3],
+      crablearnShare: values[5],
+      crablearnAccount: values[8],
+      sourceRowIndex: index + 1,
+      rawRow: row
+    });
+  });
+  return entries;
 }
 
 function resolveWorkbookPath(workbookPath) {
@@ -323,6 +384,7 @@ export async function importWorkbookToAccounts(workbookPath, { skipSheets = [] }
 
   const workbook = XLSX.readFile(absolutePath);
   const entries = [];
+  const jananiEntries = parseJananiAccounts(workbook.Sheets["Janani Accounts"]);
   const skipSet = new Set((skipSheets || []).map(s => String(s).trim()));
 
   for (const sheetName of workbook.SheetNames) {
@@ -368,6 +430,7 @@ export async function importWorkbookToAccounts(workbookPath, { skipSheets = [] }
     if (monthKeys.length > 0) {
       await client.query(`DELETE FROM account_entries WHERE month_key = ANY($1::text[])`, [monthKeys]);
     }
+    await client.query("DELETE FROM janani_accounts");
 
     const insertSql = `
       INSERT INTO account_entries (
@@ -423,6 +486,14 @@ export async function importWorkbookToAccounts(workbookPath, { skipSheets = [] }
         entry.expensesDec,
         JSON.stringify(entry.rawRow)
       ]);
+    }
+
+    for (const entry of jananiEntries) {
+      await client.query(`
+        INSERT INTO janani_accounts
+          (month_key, month_label, month_date, person_name, amount, salary, janani_share, crablearn_share, crablearn_account, source_row_index, raw_row)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+      `, [entry.monthKey, entry.monthLabel, entry.monthDate, entry.personName, entry.amount, entry.salary, entry.jananiShare, entry.crablearnShare, entry.crablearnAccount, entry.sourceRowIndex, JSON.stringify(entry.rawRow)]);
     }
 
     // Back-fill teacher for batch sub-rows using the most recent known teacher for the same student.
@@ -512,8 +583,18 @@ export async function importWorkbookToAccounts(workbookPath, { skipSheets = [] }
   return {
     workbookPath: absolutePath,
     sheetsScanned: workbook.SheetNames.length,
-    rowsImported: entries.length
+    rowsImported: entries.length,
+    jananiRowsImported: jananiEntries.length
   };
+}
+
+export async function listJananiAccounts(monthKey = null) {
+  await ensureAccountsSchema();
+  const result = await getPool().query(
+    `SELECT * FROM janani_accounts ${monthKey ? "WHERE month_key = $1" : ""} ORDER BY month_date, source_row_index`,
+    monthKey ? [monthKey] : []
+  );
+  return result.rows;
 }
 
 function monthLabelToKeys(label) {

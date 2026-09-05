@@ -352,6 +352,36 @@ function ReportsPanel({ reports, formatCurrency }) {
   );
 }
 
+function JananiAccountsPanel({ rows, formatCurrency }) {
+  const totals = rows.reduce((acc, row) => ({
+    amount: acc.amount + Number(row.amount || 0),
+    salary: acc.salary + Number(row.salary || 0),
+    janani_share: acc.janani_share + Number(row.janani_share || 0),
+    crablearn_share: acc.crablearn_share + Number(row.crablearn_share || 0),
+    crablearn_account: acc.crablearn_account + Number(row.crablearn_account || 0)
+  }), { amount: 0, salary: 0, janani_share: 0, crablearn_share: 0, crablearn_account: 0 });
+
+  return (
+    <article className="report-card">
+      <div className="report-card-header">
+        <div>
+          <h3>Janani Accounts</h3>
+          <p className="analytics-desc">Monthly owner-share and account ledger imported from the Janani Accounts workbook tab.</p>
+        </div>
+      </div>
+      {!rows.length ? <p>No Janani Accounts data found.</p> : (
+        <div className="report-table-wrap">
+          <table className="report-table">
+            <thead><tr><th>Month</th><th>Person</th><th className="col-num">Amount</th><th className="col-num">Salary</th><th className="col-num">Janani Share</th><th className="col-num">Crablearn Share</th><th className="col-num">Crablearn Account</th></tr></thead>
+            <tbody>{rows.map((row) => <tr key={row.id}><td>{row.month_label}</td><td>{row.person_name}</td><td className="col-num">{formatCurrency(row.amount)}</td><td className="col-num">{formatCurrency(row.salary)}</td><td className="col-num">{formatCurrency(row.janani_share)}</td><td className="col-num">{formatCurrency(row.crablearn_share)}</td><td className="col-num">{formatCurrency(row.crablearn_account)}</td></tr>)}</tbody>
+            <tfoot><tr className="accounts-totals-row"><td colSpan="2"><strong>Total</strong></td><td className="col-num"><strong>{formatCurrency(totals.amount)}</strong></td><td className="col-num"><strong>{formatCurrency(totals.salary)}</strong></td><td className="col-num"><strong>{formatCurrency(totals.janani_share)}</strong></td><td className="col-num"><strong>{formatCurrency(totals.crablearn_share)}</strong></td><td className="col-num"><strong>{formatCurrency(totals.crablearn_account)}</strong></td></tr></tfoot>
+          </table>
+        </div>
+      )}
+    </article>
+  );
+}
+
 // ── Enroll Panel ─────────────────────────────────────────────────────────────
 
 const EMPTY_ENROLL = { monthLabel:"", studentName:"", studentId:"", teacherName:"", cltId:"", classTypeCode:"O2O", subClassTypeCode:"", subjectName:"", feesMonth:"", tutorSalaryHr:"", tutorSalaryPaid:"", profit:"", carryOverTutorFees:"", paymentDate:"" };
@@ -1637,6 +1667,7 @@ export default function AccountsPage({ apiBaseUrl, currentUser }) {
   const [students, setStudents] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [monthlyReport, setMonthlyReport] = useState([]);
+  const [jananiAccounts, setJananiAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [analytics, setAnalytics] = useState({ trends: [], topTeachers: [], subjects: [], loading: false, error: "" });
@@ -1777,16 +1808,18 @@ export default function AccountsPage({ apiBaseUrl, currentUser }) {
     setErrorMessage("");
 
     try {
-      const [studentsRes, teachersRes, monthlyRes] = await Promise.all([
+      const [studentsRes, teachersRes, monthlyRes, jananiRes] = await Promise.all([
         fetch(`${apiBaseUrl}/api/accounts/students${queryMonth}`),
         fetch(`${apiBaseUrl}/api/accounts/teachers${queryMonth}`),
-        fetch(`${apiBaseUrl}/api/accounts/reports/monthly`)
+        fetch(`${apiBaseUrl}/api/accounts/reports/monthly`),
+        fetch(`${apiBaseUrl}/api/accounts/janani`)
       ]);
 
-      const [studentsPayload, teachersPayload, monthlyPayload] = await Promise.all([
+      const [studentsPayload, teachersPayload, monthlyPayload, jananiPayload] = await Promise.all([
         studentsRes.json(),
         teachersRes.json(),
-        monthlyRes.json()
+        monthlyRes.json(),
+        jananiRes.json()
       ]);
 
       if (!studentsRes.ok || !studentsPayload.ok) {
@@ -1802,6 +1835,7 @@ export default function AccountsPage({ apiBaseUrl, currentUser }) {
       setStudents(Array.isArray(studentsPayload.rows) ? studentsPayload.rows : []);
       setTeachers(Array.isArray(teachersPayload.rows) ? teachersPayload.rows : []);
       setMonthlyReport(Array.isArray(monthlyPayload.rows) ? monthlyPayload.rows : []);
+      setJananiAccounts(Array.isArray(jananiPayload.rows) ? jananiPayload.rows : []);
     } catch (error) {
       setErrorMessage(String(error.message || error));
     } finally {
@@ -1853,6 +1887,13 @@ export default function AccountsPage({ apiBaseUrl, currentUser }) {
           onClick={() => setActiveTab("reports")}
         >
           Reports
+        </button>
+        <button
+          className={`accounts-tab${activeTab === "janani" ? " active" : ""}`}
+          type="button"
+          onClick={() => setActiveTab("janani")}
+        >
+          Janani Accounts
         </button>
         <button
           className={`accounts-tab${activeTab === "enroll" ? " active" : ""}`}
@@ -2084,6 +2125,10 @@ export default function AccountsPage({ apiBaseUrl, currentUser }) {
 
       {activeTab === "reports" ? (
         <ReportsPanel reports={reports} formatCurrency={formatCurrency} />
+      ) : null}
+
+      {activeTab === "janani" ? (
+        <JananiAccountsPanel rows={jananiAccounts} formatCurrency={formatCurrency} />
       ) : null}
 
       {activeTab === "enroll" ? (

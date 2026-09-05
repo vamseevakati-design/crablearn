@@ -79,6 +79,7 @@ import {
   getTutorRates,
   importWorkbookToAccounts,
   listStudentAccounts,
+  listJananiAccounts,
   listTeacherAccounts,
   lookupRates,
   updateAccountEntry,
@@ -1173,6 +1174,15 @@ app.get("/api/accounts/teachers", async (req, res) => {
     return res.json({ ok: true, rows });
   } catch (error) {
     return res.status(500).json({ ok: false, message: `Could not load teacher accounts: ${String(error.message || error)}` });
+  }
+});
+
+app.get("/api/accounts/janani", async (req, res) => {
+  try {
+    const rows = await listJananiAccounts(String(req.query.month || "").trim() || null);
+    return res.json({ ok: true, rows });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: `Could not load Janani Accounts: ${String(error.message || error)}` });
   }
 });
 
