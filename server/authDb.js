@@ -28,7 +28,12 @@ function normalizeConnectionString(value) {
 function getPool() {
   if (pool) return pool;
   const connectionString = normalizeConnectionString(process.env.DATABASE_URL || process.env.POSTGRES_URL);
-  const ssl = process.env.PGSSLMODE === "require" ? { rejectUnauthorized: false } : undefined;
+  const ssl =
+    process.env.PGSSLMODE === "require" ||
+    /sslmode=require/i.test(connectionString || "") ||
+    /\.supabase\.co|\.supabase\.com|\.neon\.tech|\.render\.com|\.vercel-storage\.com/i.test(connectionString || "")
+      ? { rejectUnauthorized: false }
+      : undefined;
   pool = connectionString
     ? new Pool({ connectionString, ...poolOptions, ssl })
     : new Pool({
