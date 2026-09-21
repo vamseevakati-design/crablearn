@@ -21,6 +21,7 @@ let data = {
       id: 2,
       full_name: "Padmaja Vakati",
       phone: "9787001217",
+      email: "vamsee.vakati@gmail.com",
       password: "Get2work",
       status: "approved",
       role: "teacher",
@@ -127,10 +128,6 @@ function normalizeDataShape() {
   if (!Array.isArray(data.password_change_requests)) {
     data.password_change_requests = [];
   }
-  data.password_change_requests = data.password_change_requests.map((request) => (
-    request.status === "pending" ? { ...request, status: "approved" } : request
-  ));
-
   if (!Array.isArray(data.assignments)) {
     data.assignments = [];
   }

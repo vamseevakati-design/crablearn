@@ -816,6 +816,9 @@ function App() {
     if (portalScreen === "admin-dashboard") {
       return "Admin dashboard";
     }
+    if (portalScreen === "requests") {
+      return "New requests";
+    }
     if (portalScreen === "meet") {
       return "Live call";
     }
@@ -1359,7 +1362,7 @@ function App() {
     if (!currentUser || !isAdmin) {
       return;
     }
-    if (portalScreen === "admin-dashboard" || portalScreen === "schedule") {
+    if (portalScreen === "admin-dashboard" || portalScreen === "requests" || portalScreen === "schedule") {
       handleAdminListUsers();
     }
   }, [portalScreen, currentUser?.id, isAdmin]);
@@ -1633,6 +1636,12 @@ function App() {
       setPortalScreen("admin-dashboard");
       return;
     }
+    if (role === "requests") {
+      goToSignInRoute(activePortalRole === "teacher" ? "teacher" : "student");
+      setAuditFilter("all");
+      setPortalScreen("requests");
+      return;
+    }
     goToSignInRoute(role);
     setPortalScreen("dashboard");
   }
@@ -1750,6 +1759,65 @@ function App() {
 
   function handleSignInToggle() {
     setSignInMenuOpen((open) => !open);
+  }
+
+  function renderRequestsDesk() {
+    const showEducators = auditFilter === "all" || auditFilter === "educators";
+    const showStudents = auditFilter === "all" || auditFilter === "students";
+    const showPasswords = auditFilter === "all" || auditFilter === "passwords";
+    return (
+      <article className="mobile-card admin-card">
+        <div className="audit-header">
+          <div>
+            <span className="audit-eyebrow">Supervisor review desk</span>
+            <h3 className="admin-heading">New requests</h3>
+            <p className="audit-intro">Review student, educator, and password requests before applying access changes.</p>
+          </div>
+          <span className="audit-total">{pendingEducators.length + pendingStudents.length + pendingPasswordRequests.length} open</span>
+        </div>
+        <div className="audit-summary-grid">
+          <button className={`audit-summary audit-summary--pink${auditFilter === "educators" ? " is-selected" : ""}`} type="button" onClick={() => setAuditFilter("educators")}>
+            <strong>{pendingEducators.length}</strong><span>New educators</span>
+          </button>
+          <button className={`audit-summary audit-summary--orange${auditFilter === "students" ? " is-selected" : ""}`} type="button" onClick={() => setAuditFilter("students")}>
+            <strong>{pendingStudents.length}</strong><span>New students</span>
+          </button>
+          <button className={`audit-summary audit-summary--blue${auditFilter === "passwords" ? " is-selected" : ""}`} type="button" onClick={() => setAuditFilter("passwords")}>
+            <strong>{pendingPasswordRequests.length}</strong><span>Password requests</span>
+          </button>
+        </div>
+        <div className="audit-filter-row" role="tablist" aria-label="Request filters">
+          {[ ["all", "All requests"], ["educators", "Educators"], ["students", "Students"], ["passwords", "Passwords"] ].map(([value, label]) => (
+            <button key={value} className={`audit-filter${auditFilter === value ? " active" : ""}`} type="button" onClick={() => setAuditFilter(value)}>{label}</button>
+          ))}
+        </div>
+        <div className="audit-request-list">
+          {showEducators ? pendingEducators.map((user) => (
+            <div className="audit-request audit-request--educator" key={`request-educator-${user.id}`}>
+              <div className="audit-request-icon">ED</div>
+              <div className="audit-request-body"><strong>{user.full_name}</strong><span>Educator account · {user.email || user.phone}</span><small>Requested {new Date(user.created_at).toLocaleString()}</small></div>
+              <div className="audit-request-actions"><button className="button portal-button green" type="button" onClick={() => handleRowApproveUser(user.phone)}>Approve</button><button className="button portal-button red" type="button" onClick={() => handleRowDenyUser(user.phone)}>Decline</button></div>
+            </div>
+          )) : null}
+          {showStudents ? pendingStudents.map((user) => (
+            <div className="audit-request audit-request--student" key={`request-student-${user.id}`}>
+              <div className="audit-request-icon">ST</div>
+              <div className="audit-request-body"><strong>{user.full_name}</strong><span>Student account · {user.email || user.phone}</span><small>Requested {new Date(user.created_at).toLocaleString()}</small></div>
+              <div className="audit-request-actions"><button className="button portal-button green" type="button" onClick={() => handleRowApproveUser(user.phone)}>Approve</button><button className="button portal-button red" type="button" onClick={() => handleRowDenyUser(user.phone)}>Decline</button></div>
+            </div>
+          )) : null}
+          {showPasswords ? pendingPasswordRequests.map((request) => (
+            <div className="audit-request" key={`request-password-${request.id}`}>
+              <div className="audit-request-icon">PW</div>
+              <div className="audit-request-body"><strong>{request.student_name}</strong><span>Password change · {request.student_phone}</span><small>Requested {new Date(request.created_at).toLocaleString()}</small></div>
+              <div className="audit-request-actions"><button className="button portal-button green" type="button" onClick={() => handleReviewPasswordRequest(request.id, "approved")}>Approve</button><button className="button portal-button red" type="button" onClick={() => handleReviewPasswordRequest(request.id, "denied")}>Decline</button></div>
+            </div>
+          )) : null}
+          {((showEducators && pendingEducators.length === 0) || !showEducators) && ((showStudents && pendingStudents.length === 0) || !showStudents) && ((showPasswords && pendingPasswordRequests.length === 0) || !showPasswords) ? <p className="audit-empty">No requests match this filter.</p> : null}
+        </div>
+        <button className="button portal-button blue audit-refresh" type="button" onClick={handleAdminListUsers} disabled={adminUsersLoading}>{adminUsersLoading ? "Refreshing..." : "Refresh requests"}</button>
+      </article>
+    );
   }
 
   function renderScheduleForm() {
@@ -2933,6 +3001,7 @@ function App() {
             <button className={`portal-tab${activePortalRole === "student" && portalScreen !== "admin-dashboard" ? " active" : ""}`} type="button" onClick={() => openWorkspace("student")}>Student</button>
             <button className={`portal-tab${activePortalRole === "teacher" && portalScreen !== "admin-dashboard" ? " active" : ""}`} type="button" onClick={() => openWorkspace("teacher")}>Educator</button>
             <button className={`portal-tab${isAccountsPortal ? " active" : ""}`} type="button" onClick={() => openWorkspace("accounts")}>Accounts</button>
+            <button className={`portal-tab${portalScreen === "requests" ? " active" : ""}`} type="button" onClick={() => openWorkspace("requests")}>Requests</button>
             <button className={`portal-tab${portalScreen === "admin-dashboard" ? " active" : ""}`} type="button" onClick={() => openWorkspace("admin")}>Admin</button>
           </div>
         ) : null}
@@ -3258,6 +3327,32 @@ function App() {
                       </ul>
                     </article>
                   ) : null}
+                </section>
+              ) : null}
+
+              {portalScreen === "requests" ? (
+                <section className="mobile-screen">
+                  <div className="portal-topbar">
+                    <span>Requests</span>
+                    <div>
+                      <strong>{`Hi, ${learnerName.toUpperCase()}`}</strong>
+                      <small>{currentUser?.role === "supervisor" ? "Supervisor portal" : "Admin portal"}</small>
+                    </div>
+                  </div>
+                  <article className="mobile-card admin-card">
+                    <div className="card-header-line"><span className="badge badge-admin">Approval queue</span></div>
+                    <h3>Review new requests</h3>
+                    <p>{adminActionMessage}</p>
+                    <label htmlFor="requestsAdminPassword">Admin / Supervisor Password</label>
+                    <input
+                      id="requestsAdminPassword"
+                      type="password"
+                      placeholder="Enter your current password"
+                      value={adminPassword}
+                      onChange={(event) => setAdminPassword(event.target.value)}
+                    />
+                  </article>
+                  {renderRequestsDesk()}
                 </section>
               ) : null}
 

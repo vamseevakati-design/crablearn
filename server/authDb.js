@@ -161,6 +161,44 @@ export async function authenticateAccount(identifier, password, role) {
   return mapAccount(row, normalizedRole);
 }
 
+export async function listRegisteredAccounts() {
+  const result = await getPool().query(`
+    SELECT student_id AS id, full_name, first_name, last_name, phone, email, status, created_at, updated_at, 'student' AS role
+    FROM students
+    UNION ALL
+    SELECT educator_id AS id, full_name, first_name, last_name, phone, email, status, created_at, updated_at, 'teacher' AS role
+    FROM educators
+    ORDER BY created_at DESC
+  `);
+  return result.rows;
+}
+
+export async function updateRegisteredAccountStatus(identifier, status, reviewedBy) {
+  const normalizedIdentifier = String(identifier || "").trim().toLowerCase();
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+  if (!normalizedIdentifier || !["approved", "denied"].includes(normalizedStatus)) {
+    return null;
+  }
+
+  const result = await getPool().query(`
+    UPDATE students
+    SET status = $1, updated_at = NOW()
+    WHERE LOWER(COALESCE(phone, '')) = $2 OR LOWER(COALESCE(email, '')) = $2 OR LOWER(COALESCE(full_name, '')) = $2
+    RETURNING *, 'student' AS role
+  `, [normalizedStatus, normalizedIdentifier]);
+  if (result.rows[0]) {
+    return mapAccount(result.rows[0], "student");
+  }
+
+  const educatorResult = await getPool().query(`
+    UPDATE educators
+    SET status = $1, updated_at = NOW()
+    WHERE LOWER(COALESCE(phone, '')) = $2 OR LOWER(COALESCE(email, '')) = $2 OR LOWER(COALESCE(full_name, '')) = $2
+    RETURNING *, 'teacher' AS role
+  `, [normalizedStatus, normalizedIdentifier]);
+  return educatorResult.rows[0] ? mapAccount(educatorResult.rows[0], "teacher") : null;
+}
+
 export function closeAuthDb() {
   if (pool) {
     void pool.end();

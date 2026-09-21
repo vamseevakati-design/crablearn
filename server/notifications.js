@@ -10,7 +10,16 @@ function normalizedEmail(student) {
 
 function normalizedPhone(student) {
   const phone = String(student?.phone || "").trim();
-  return phone.includes("@") ? "" : phone;
+  if (phone.includes("@")) {
+    return "";
+  }
+
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10 && /^[6-9]/.test(digits)) {
+    return `+91${digits}`;
+  }
+
+  return phone;
 }
 
 export async function triggerOnboardingWorkflow({ student }) {
@@ -48,7 +57,13 @@ export async function sendPasswordOtpNotifications({ student, otp }) {
   const deliveries = await sendNotifications({
     recipients: [student],
     workflowId: process.env.NOVU_PASSWORD_WORKFLOW || "password-otp",
-    payload: { otp, subject: "Crab Learn password verification code", message },
+    payload: {
+      otp,
+      otpCode: otp,
+      expiresInMinutes: 10,
+      subject: "Crab Learn password verification code",
+      message
+    },
     logLabel: "password-otp"
   });
   return deliveries[0] || notConfiguredDelivery();
@@ -65,6 +80,24 @@ export async function sendPasswordUpdatedNotification({ student }) {
     logLabel: "password-updated"
   });
   return deliveries[0] || notConfiguredDelivery();
+}
+
+export async function sendApprovalStatusNotification({ student, status, reviewedBy }) {
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+  const approved = normalizedStatus === "approved";
+  const subject = approved
+    ? "Your Crab Learn account was approved"
+    : "Update on your Crab Learn account request";
+  const message = approved
+    ? `Your Crab Learn ${student?.role === "teacher" ? "educator" : "student"} account has been approved${reviewedBy ? ` by ${reviewedBy}` : ""}. You can now sign in.`
+    : `Your Crab Learn ${student?.role === "teacher" ? "educator" : "student"} account request was denied${reviewedBy ? ` by ${reviewedBy}` : ""}. Please contact support if you need more information.`;
+
+  return sendNotifications({
+    recipients: [student],
+    workflowId: process.env.NOVU_ACCOUNT_STATUS_WORKFLOW || "account-approval-status",
+    payload: { subject, message, status: normalizedStatus, reviewedBy: reviewedBy || null, student },
+    logLabel: "account-approval-status"
+  });
 }
 
 export async function sendMeetingNotifications({ meeting, recipients }) {
@@ -123,11 +156,16 @@ async function sendNotifications({ recipients, workflowId, payload, logLabel }) 
         })
       });
       const status = response.ok ? "queued" : "failed";
+      if (!response.ok) {
+        const responseBody = await response.text();
+        console.error(`[${logLabel}] Novu rejected ${workflow} for ${recipient.full_name}: HTTP ${response.status} ${responseBody.slice(0, 500)}`);
+      }
       deliveries.novu = status;
       deliveries.email = email ? status : "not_configured";
       deliveries.sms = phone ? status : "not_configured";
       deliveries.whatsapp = phone ? status : "not_configured";
-    } catch (_error) {
+    } catch (error) {
+      console.error(`[${logLabel}] Novu request failed for ${recipient.full_name}: ${error.message}`);
       deliveries.novu = "failed";
       deliveries.email = email ? "failed" : "not_configured";
       deliveries.sms = phone ? "failed" : "not_configured";
